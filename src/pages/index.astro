@@ -1,17 +1,1361 @@
 ---
+import { getCollection } from "astro:content";
 
+const contentEntries = await getCollection("entries");
+
+const entries = contentEntries
+  .sort(
+    (a, b) =>
+      b.data.date.getTime() -
+      a.data.date.getTime()
+  )
+  .map((entry) => ({
+    id: entry.id,
+    date: entry.data.date
+      .toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+      .toUpperCase(),
+    title: entry.data.title,
+    location: entry.data.location,
+    category: entry.data.category,
+    description: entry.data.description,
+    cover: entry.data.cover || "",
+  }));
 ---
 
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>for the record</title>
+
+    <meta
+      name="description"
+      content="A personal archive of travel, film, food, music, and life."
+    />
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+
+    <header class="site-header">
+
+      <a href="/" class="logo">
+        for the record
+      </a>
+
+      <nav>
+        <button
+          class="search-button"
+          type="button"
+          aria-expanded="false"
+          aria-controls="search-panel"
+        >
+          search
+        </button>
+      </nav>
+
+    </header>
+
+
+    <!-- SEARCH -->
+
+    <section
+      id="search-panel"
+      class="search-panel"
+      aria-hidden="true"
+    >
+
+      <div class="search-inner">
+
+        <div class="search-top">
+
+          <span>SEARCH</span>
+
+          <button
+            id="search-close"
+            type="button"
+          >
+            CLOSE
+          </button>
+
+        </div>
+
+        <input
+          id="search-input"
+          type="search"
+          placeholder="Search entries..."
+          autocomplete="off"
+        />
+
+        <div
+          id="search-results"
+          class="search-results"
+        ></div>
+
+      </div>
+
+    </section>
+
+
+    <!-- MAIN -->
+
+    <main>
+
+      <!-- CATEGORIES -->
+
+      <nav class="categories">
+
+        <button
+          class="category-button active"
+          data-category="ALL"
+          type="button"
+        >
+          ALL
+        </button>
+
+        <button
+          class="category-button"
+          data-category="TRAVEL"
+          type="button"
+        >
+          TRAVEL
+        </button>
+
+        <button
+          class="category-button"
+          data-category="FILM"
+          type="button"
+        >
+          FILM
+        </button>
+
+        <button
+          class="category-button"
+          data-category="FOOD"
+          type="button"
+        >
+          FOOD
+        </button>
+
+        <button
+          class="category-button"
+          data-category="MUSIC"
+          type="button"
+        >
+          MUSIC
+        </button>
+
+        <button
+          class="category-button"
+          data-category="LIFE"
+          type="button"
+        >
+          LIFE
+        </button>
+
+      </nav>
+
+
+      <!-- RECENT -->
+
+      <section class="recent">
+
+        <div class="section-header">
+
+          <h2>RECENT</h2>
+
+        </div>
+
+
+        <!-- ENTRY GRID -->
+
+        <div
+          class="entry-grid"
+          id="entry-grid"
+        >
+
+          {
+            entries.map((entry) => (
+
+              <a
+                href={`/journal/${entry.id}`}
+                class="entry-card"
+                data-category={entry.category}
+                data-title={entry.title}
+                data-date={entry.date}
+                data-location={entry.location}
+              >
+
+                <div class="entry-image">
+
+                  {
+                    entry.cover ? (
+                      <img
+                        src={entry.cover}
+                        alt={entry.title}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span>PHOTO</span>
+                    )
+                  }
+
+                </div>
+
+
+                <div class="entry-info">
+
+                  <div class="entry-meta">
+
+                    <span>
+                      {entry.date}
+                    </span>
+
+                    <span>
+                      {entry.category}
+                    </span>
+
+                  </div>
+
+
+                  <h3>
+                    {entry.title}
+                  </h3>
+
+
+                  <p>
+                    {entry.location}
+                  </p>
+
+                </div>
+
+              </a>
+
+            ))
+          }
+
+        </div>
+
+
+        <!-- EMPTY -->
+
+        <div
+          id="empty-state"
+          class="empty-state"
+          hidden
+        >
+          No entries found.
+        </div>
+
+      </section>
+
+    </main>
+
+
+    <!-- FOOTER -->
+
+    <footer class="site-footer">
+
+      <span>
+        for the record
+      </span>
+
+      <span>
+        © 2026
+      </span>
+
+    </footer>
+
+
+    <!-- SEARCH SCRIPT -->
+
+    <script>
+
+      const searchButton =
+        document.querySelector(".search-button");
+
+      const searchPanel =
+        document.querySelector("#search-panel");
+
+      const searchClose =
+        document.querySelector("#search-close");
+
+      const searchInput =
+        document.querySelector("#search-input");
+
+      const searchResults =
+        document.querySelector("#search-results");
+
+      const cards =
+        Array.from(
+          document.querySelectorAll(".entry-card")
+        );
+
+      const categoryButtons =
+        Array.from(
+          document.querySelectorAll(
+            ".category-button"
+          )
+        );
+
+      const emptyState =
+        document.querySelector(
+          "#empty-state"
+        );
+
+
+      let activeCategory = "ALL";
+
+
+      /* CATEGORY FILTER */
+
+      function filterEntries() {
+
+        const query =
+          searchInput.value
+            .trim()
+            .toLowerCase();
+
+        let visibleCount = 0;
+
+
+        cards.forEach((card) => {
+
+          const category =
+            card.dataset.category || "";
+
+          const title =
+            card.dataset.title || "";
+
+          const date =
+            card.dataset.date || "";
+
+          const location =
+            card.dataset.location || "";
+
+
+          const matchesCategory =
+            activeCategory === "ALL" ||
+            category === activeCategory;
+
+
+          const searchText =
+            `${title} ${date} ${location} ${category}`
+              .toLowerCase();
+
+
+          const matchesSearch =
+            !query ||
+            searchText.includes(query);
+
+
+          const visible =
+            matchesCategory &&
+            matchesSearch;
+
+
+          card.style.display =
+            visible ? "" : "none";
+
+
+          if (visible) {
+            visibleCount++;
+          }
+
+        });
+
+
+        emptyState.hidden =
+          visibleCount !== 0;
+
+      }
+
+
+      /* CATEGORY BUTTONS */
+
+      categoryButtons.forEach(
+        (button) => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              activeCategory =
+                button.dataset.category;
+
+
+              categoryButtons.forEach(
+                (item) => {
+
+                  item.classList.remove(
+                    "active"
+                  );
+
+                }
+              );
+
+
+              button.classList.add(
+                "active"
+              );
+
+
+              filterEntries();
+
+            }
+          );
+
+        }
+      );
+
+
+      /* OPEN SEARCH */
+
+      function openSearch() {
+
+        searchPanel.classList.add(
+          "open"
+        );
+
+        searchPanel.setAttribute(
+          "aria-hidden",
+          "false"
+        );
+
+        searchButton.setAttribute(
+          "aria-expanded",
+          "true"
+        );
+
+
+        setTimeout(() => {
+
+          searchInput.focus();
+
+        }, 50);
+
+      }
+
+
+      /* CLOSE SEARCH */
+
+      function closeSearch() {
+
+        searchPanel.classList.remove(
+          "open"
+        );
+
+        searchPanel.setAttribute(
+          "aria-hidden",
+          "true"
+        );
+
+        searchButton.setAttribute(
+          "aria-expanded",
+          "false"
+        );
+
+        searchInput.value = "";
+
+        searchResults.innerHTML = "";
+
+      }
+
+
+      searchButton.addEventListener(
+        "click",
+        openSearch
+      );
+
+
+      searchClose.addEventListener(
+        "click",
+        closeSearch
+      );
+
+
+      /* SEARCH */
+
+      searchInput.addEventListener(
+        "input",
+        () => {
+
+          const query =
+            searchInput.value
+              .trim()
+              .toLowerCase();
+
+
+          if (!query) {
+
+            searchResults.innerHTML = "";
+
+            return;
+
+          }
+
+
+          const matches =
+            cards.filter(
+              (card) => {
+
+                const text =
+                  card.innerText
+                    .toLowerCase();
+
+                return text.includes(query);
+
+              }
+            );
+
+
+          if (!matches.length) {
+
+            searchResults.innerHTML = `
+              <div class="search-empty">
+                No entries found.
+              </div>
+            `;
+
+            return;
+
+          }
+
+
+          searchResults.innerHTML =
+            matches
+              .map((card) => {
+
+                const title =
+                  card.dataset.title;
+
+                const category =
+                  card.dataset.category;
+
+                const date =
+                  card.dataset.date;
+
+                const href =
+                  card.getAttribute(
+                    "href"
+                  );
+
+
+                return `
+                  <a
+                    href="${href}"
+                    class="search-result"
+                  >
+
+                    <span>
+                      ${date}
+                    </span>
+
+                    <strong>
+                      ${title}
+                    </strong>
+
+                    <span>
+                      ${category}
+                    </span>
+
+                  </a>
+                `;
+
+              })
+              .join("");
+
+        }
+      );
+
+
+      /* ESC */
+
+      document.addEventListener(
+        "keydown",
+        (event) => {
+
+          if (
+            event.key === "Escape"
+          ) {
+
+            closeSearch();
+
+          }
+
+        }
+      );
+
+    </script>
+
+  </body>
 </html>
+
+
+<style>
+
+  /* ================================
+     RESET
+  ================================= */
+
+  :global(*) {
+    box-sizing: border-box;
+  }
+
+
+  :global(body) {
+
+    margin: 0;
+
+    background: #ffffff;
+
+    color: #111111;
+
+    font-family:
+      Inter,
+      "Noto Sans TC",
+      Helvetica,
+      Arial,
+      system-ui,
+      sans-serif;
+
+  }
+
+
+  :global(a) {
+
+    color: inherit;
+
+    text-decoration: none;
+
+  }
+
+
+  :global(button) {
+
+    font-family: inherit;
+
+  }
+
+
+  /* ================================
+     HEADER
+  ================================= */
+
+  .site-header {
+
+    width:
+      min(
+        1200px,
+        calc(100% - 64px)
+      );
+
+    height: 80px;
+
+    margin: 0 auto;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    border-bottom:
+      1px solid #e5e5e5;
+
+  }
+
+
+  .logo {
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    letter-spacing: -0.02em;
+
+  }
+
+
+  .search-button {
+
+    border: 0;
+
+    background: transparent;
+
+    padding: 0;
+
+    color: #6f6f6f;
+
+    font-size: 12px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.08em;
+
+    cursor: pointer;
+
+  }
+
+
+  .search-button:hover {
+
+    color: #111111;
+
+  }
+
+
+  /* ================================
+     SEARCH PANEL
+  ================================= */
+
+  .search-panel {
+
+    display: none;
+
+    border-bottom:
+      1px solid #e5e5e5;
+
+    background: #ffffff;
+
+  }
+
+
+  .search-panel.open {
+
+    display: block;
+
+  }
+
+
+  .search-inner {
+
+    width:
+      min(
+        1200px,
+        calc(100% - 64px)
+      );
+
+    margin: 0 auto;
+
+    padding:
+      28px
+      0
+      36px;
+
+  }
+
+
+  .search-top {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+
+    color: #999999;
+
+    font-size: 10px;
+
+    letter-spacing: 0.08em;
+
+  }
+
+
+  .search-top button {
+
+    border: 0;
+
+    background: transparent;
+
+    padding: 0;
+
+    color: #999999;
+
+    font-size: 10px;
+
+    letter-spacing: 0.08em;
+
+    cursor: pointer;
+
+  }
+
+
+  .search-top button:hover {
+
+    color: #111111;
+
+  }
+
+
+  #search-input {
+
+    width: 100%;
+
+    border: 0;
+
+    border-bottom:
+      1px solid #111111;
+
+    outline: none;
+
+    padding:
+      12px
+      0;
+
+    background: transparent;
+
+    color: #111111;
+
+    font-family: inherit;
+
+    font-size: 28px;
+
+  }
+
+
+  #search-input::placeholder {
+
+    color: #bbbbbb;
+
+  }
+
+
+  .search-results {
+
+    display: flex;
+
+    flex-direction: column;
+
+  }
+
+
+  .search-result {
+
+    display: grid;
+
+    grid-template-columns:
+      120px
+      1fr
+      100px;
+
+    gap: 20px;
+
+    padding:
+      18px
+      0;
+
+    border-bottom:
+      1px solid #eeeeee;
+
+    align-items: center;
+
+  }
+
+
+  .search-result span {
+
+    color: #999999;
+
+    font-size: 10px;
+
+    letter-spacing: 0.08em;
+
+    text-transform: uppercase;
+
+  }
+
+
+  .search-result strong {
+
+    font-size: 15px;
+
+    font-weight: 500;
+
+  }
+
+
+  .search-empty {
+
+    padding:
+      24px
+      0;
+
+    color: #999999;
+
+    font-size: 13px;
+
+  }
+
+
+  /* ================================
+     MAIN
+  ================================= */
+
+  main {
+
+    width:
+      min(
+        1200px,
+        calc(100% - 64px)
+      );
+
+    margin: 0 auto;
+
+  }
+
+
+  /* ================================
+     CATEGORIES
+  ================================= */
+
+  .categories {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-bottom:
+      1px solid #e5e5e5;
+
+    overflow-x: auto;
+
+  }
+
+
+  .category-button {
+
+    flex: 0 0 auto;
+
+    border: 0;
+
+    background: transparent;
+
+    padding:
+      20px
+      34px;
+
+    color: #999999;
+
+    font-size: 11px;
+
+    letter-spacing: 0.08em;
+
+    cursor: pointer;
+
+  }
+
+
+  .category-button:hover {
+
+    color: #111111;
+
+  }
+
+
+  .category-button.active {
+
+    color: #111111;
+
+  }
+
+
+  /* ================================
+     RECENT
+  ================================= */
+
+  .recent {
+
+    padding:
+      80px
+      0
+      120px;
+
+  }
+
+
+  .section-header {
+
+    margin-bottom: 32px;
+
+  }
+
+
+  .section-header h2 {
+
+    margin: 0;
+
+    color: #111111;
+
+    font-size: 11px;
+
+    font-weight: 500;
+
+    letter-spacing: 0.1em;
+
+  }
+
+
+  /* ================================
+     ENTRY GRID
+  ================================= */
+
+  .entry-grid {
+
+    display: grid;
+
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(0, 1fr)
+      );
+
+    column-gap: 20px;
+
+    row-gap: 56px;
+
+  }
+
+
+  .entry-card {
+
+    display: block;
+
+    min-width: 0;
+
+  }
+
+
+  /* ================================
+     ENTRY IMAGE
+  ================================= */
+
+  .entry-image {
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    background: #f3f3f3;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+
+    margin-bottom: 18px;
+
+  }
+
+
+  .entry-image span {
+
+    color: #aaaaaa;
+
+    font-size: 10px;
+
+    letter-spacing: 0.1em;
+
+  }
+
+
+  .entry-image img {
+
+    display: block;
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+    transition:
+      transform
+      0.4s
+      ease;
+
+  }
+
+
+  .entry-card:hover
+  .entry-image img {
+
+    transform: scale(1.02);
+
+  }
+
+
+  /* ================================
+     ENTRY INFO
+  ================================= */
+
+  .entry-meta {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 10px;
+
+    color: #999999;
+
+    font-size: 9px;
+
+    letter-spacing: 0.06em;
+
+    text-transform: uppercase;
+
+  }
+
+
+  .entry-info h3 {
+
+    margin: 0;
+
+    color: #111111;
+
+    font-size: 15px;
+
+    line-height: 1.35;
+
+    font-weight: 500;
+
+    letter-spacing: -0.02em;
+
+  }
+
+
+  .entry-info p {
+
+    margin:
+      8px
+      0
+      0;
+
+    color: #999999;
+
+    font-size: 10px;
+
+    letter-spacing: 0.05em;
+
+    text-transform: uppercase;
+
+  }
+
+
+  /* ================================
+     EMPTY STATE
+  ================================= */
+
+  .empty-state {
+
+    padding:
+      80px
+      0;
+
+    color: #999999;
+
+    font-size: 13px;
+
+  }
+
+
+  /* ================================
+     FOOTER
+  ================================= */
+
+  .site-footer {
+
+    width:
+      min(
+        1200px,
+        calc(100% - 64px)
+      );
+
+    margin: 0 auto;
+
+    padding:
+      24px
+      0
+      40px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    border-top:
+      1px solid #e5e5e5;
+
+    color: #999999;
+
+    font-size: 11px;
+
+  }
+
+
+  /* ================================
+     TABLET
+  ================================= */
+
+  @media (max-width: 900px) {
+
+    .entry-grid {
+
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(0, 1fr)
+        );
+
+    }
+
+  }
+
+
+  /* ================================
+     MOBILE
+  ================================= */
+
+  @media (max-width: 700px) {
+
+    .site-header,
+    main,
+    .site-footer,
+    .search-inner {
+
+      width:
+        calc(100% - 40px);
+
+    }
+
+
+    .site-header {
+
+      height: 68px;
+
+    }
+
+
+    .categories {
+
+      justify-content: flex-start;
+
+      margin-left: -20px;
+
+      margin-right: -20px;
+
+      padding-left: 4px;
+
+    }
+
+
+    .category-button {
+
+      padding:
+        18px
+        20px;
+
+    }
+
+
+    .recent {
+
+      padding:
+        60px
+        0
+        80px;
+
+    }
+
+
+    .entry-grid {
+
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(0, 1fr)
+        );
+
+      column-gap: 14px;
+
+      row-gap: 40px;
+
+    }
+
+
+    .entry-meta {
+
+      display: block;
+
+    }
+
+
+    .entry-meta span {
+
+      display: block;
+
+      margin-bottom: 5px;
+
+    }
+
+
+    .entry-info h3 {
+
+      font-size: 14px;
+
+    }
+
+
+    .search-result {
+
+      grid-template-columns: 1fr;
+
+      gap: 6px;
+
+    }
+
+
+    #search-input {
+
+      font-size: 22px;
+
+    }
+
+  }
+
+
+  /* ================================
+     SMALL MOBILE
+  ================================= */
+
+  @media (max-width: 480px) {
+
+    .entry-grid {
+
+      grid-template-columns: 1fr;
+
+    }
+
+  }
+
+</style>

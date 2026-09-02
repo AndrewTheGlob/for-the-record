@@ -1,0 +1,812 @@
+---
+import { getCollection, render } from "astro:content";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("entries");
+
+  return entries.map((entry) => ({
+    params: {
+      slug: entry.id,
+    },
+    props: {
+      entry,
+    },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+const { title, date, category, location, description, cover } = entry.data;
+
+const formattedDate = date
+  .toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+  .toUpperCase();
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{title} — for the record</title>
+
+    <meta
+      name="description"
+      content={description}
+    />
+  </head>
+
+  <body>
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+
+    <header class="site-header">
+
+      <a href="/" class="logo">
+        for the record
+      </a>
+
+      <nav>
+        <a href="/" class="back">
+          back
+        </a>
+
+        <button
+          class="search-button"
+          type="button"
+        >
+          search
+        </button>
+      </nav>
+
+    </header>
+
+
+    <!-- =========================
+         MAIN
+    ========================== -->
+
+    <main>
+
+      <!-- =========================
+           ARTICLE HEADER
+      ========================== -->
+
+      <section class="article-header">
+
+        <div class="meta">
+
+          <span>{formattedDate}</span>
+
+          <span>{category}</span>
+
+          <span>{location}</span>
+
+        </div>
+
+
+        <h1>
+          {title}
+        </h1>
+
+
+        <p class="intro">
+          {description}
+        </p>
+
+      </section>
+
+
+      <!-- =========================
+           COVER IMAGE
+      ========================== -->
+
+      {
+        cover ? (
+          <div class="cover">
+            <img
+              src={cover}
+              alt={title}
+            />
+          </div>
+        ) : (
+          <div class="cover">
+            <span>PHOTO</span>
+          </div>
+        )
+      }
+
+
+      <!-- =========================
+           ARTICLE CONTENT
+      ========================== -->
+
+      <section class="article-layout">
+
+        <aside>
+
+          <span>
+            01
+          </span>
+
+          <span>
+            {category}
+          </span>
+
+        </aside>
+
+
+        <article>
+
+          <Content />
+
+        </article>
+
+      </section>
+
+
+      <!-- =========================
+           ARTICLE INFORMATION
+      ========================== -->
+
+      <footer class="article-footer">
+
+        <div>
+
+          <span>
+            Category
+          </span>
+
+          <strong>
+            {category}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            Date
+          </span>
+
+          <strong>
+            {formattedDate}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            Location
+          </span>
+
+          <strong>
+            {location}
+          </strong>
+
+        </div>
+
+      </footer>
+
+    </main>
+
+
+    <!-- =========================
+         SITE FOOTER
+    ========================== -->
+
+    <footer class="site-footer">
+
+      <span>
+        for the record
+      </span>
+
+      <span>
+        © 2026
+      </span>
+
+    </footer>
+
+
+  </body>
+</html>
+
+
+<style>
+
+  /* =================================
+     RESET
+  ================================= */
+
+  :global(*) {
+    box-sizing: border-box;
+  }
+
+
+  :global(body) {
+
+    margin: 0;
+
+    background: #ffffff;
+
+    color: #111111;
+
+    font-family:
+      Inter,
+      "Noto Sans TC",
+      Helvetica,
+      Arial,
+      system-ui,
+      sans-serif;
+
+  }
+
+
+  :global(a) {
+
+    color: inherit;
+
+    text-decoration: none;
+
+  }
+
+
+  /* =================================
+     HEADER
+  ================================= */
+
+  .site-header {
+
+    width:
+      min(
+        1200px,
+        calc(100% - 64px)
+      );
+
+    height: 80px;
+
+    margin: 0 auto;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    border-bottom:
+      1px solid #e5e5e5;
+
+  }
+
+
+  .logo {
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    letter-spacing: -0.02em;
+
+  }
+
+
+  nav {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 28px;
+
+    font-size: 12px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.08em;
+
+  }
+
+
+  nav a,
+  .search-button {
+
+    color: #6f6f6f;
+
+  }
+
+
+  nav a:hover,
+  .search-button:hover {
+
+    color: #111111;
+
+  }
+
+
+  .search-button {
+
+    border: 0;
+
+    background: transparent;
+
+    padding: 0;
+
+    font: inherit;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.08em;
+
+    cursor: pointer;
+
+  }
+
+
+  /* =================================
+     MAIN
+  ================================= */
+
+  main {
+
+    width:
+      min(
+        1200px,
+        calc(100% - 64px)
+      );
+
+    margin: 0 auto;
+
+  }
+
+
+  /* =================================
+     ARTICLE HEADER
+  ================================= */
+
+  .article-header {
+
+    width: 100%;
+
+    margin:
+      110px
+      0
+      70px;
+
+  }
+
+
+  .meta {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 24px;
+
+    margin-bottom: 28px;
+
+    color: #6f6f6f;
+
+    font-size: 11px;
+
+    letter-spacing: 0.08em;
+
+    text-transform: uppercase;
+
+  }
+
+
+  h1 {
+
+    max-width: 1100px;
+
+    margin: 0;
+
+    font-size:
+      clamp(
+        44px,
+        6vw,
+        78px
+      );
+
+    line-height: 0.98;
+
+    font-weight: 500;
+
+    letter-spacing: -0.055em;
+
+  }
+
+
+  .intro {
+
+    max-width: 620px;
+
+    margin:
+      32px
+      0
+      0;
+
+    color: #6f6f6f;
+
+    font-size: 17px;
+
+    line-height: 1.8;
+
+  }
+
+
+  /* =================================
+     COVER
+  ================================= */
+
+  .cover {
+
+    width: 100%;
+
+    aspect-ratio: 16 / 9;
+
+    background: #f3f3f3;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+
+  }
+
+
+  .cover span {
+
+    color: #aaaaaa;
+
+    font-size: 11px;
+
+    letter-spacing: 0.1em;
+
+  }
+
+
+  .cover img {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+    display: block;
+
+  }
+
+
+  /* =================================
+     ARTICLE CONTENT
+  ================================= */
+
+  .article-layout {
+
+    display: grid;
+
+    grid-template-columns:
+      120px
+      minmax(0, 680px);
+
+    gap: 40px;
+
+    justify-content: start;
+
+    margin:
+      100px
+      0;
+
+  }
+
+
+  /* =================================
+     ARTICLE SIDE LABEL
+  ================================= */
+
+  aside {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+    color: #999999;
+
+    font-size: 10px;
+
+    letter-spacing: 0.08em;
+
+    text-transform: uppercase;
+
+  }
+
+
+  /* =================================
+     ARTICLE BODY
+  ================================= */
+
+  article {
+
+    width: 100%;
+
+    font-size: 16px;
+
+    line-height: 2;
+
+  }
+
+
+  article :global(p) {
+
+    margin:
+      0
+      0
+      28px;
+
+  }
+
+
+  article :global(h2) {
+
+    margin:
+      72px
+      0
+      24px;
+
+    font-size: 28px;
+
+    line-height: 1.2;
+
+    font-weight: 500;
+
+    letter-spacing: -0.03em;
+
+  }
+
+
+  article :global(h3) {
+
+    margin:
+      56px
+      0
+      20px;
+
+    font-size: 20px;
+
+    font-weight: 500;
+
+  }
+
+
+  article :global(img) {
+
+    display: block;
+
+    width: 100%;
+
+    height: auto;
+
+    margin:
+      48px
+      0;
+
+  }
+
+
+  /* =================================
+     ARTICLE FOOTER
+  ================================= */
+
+  .article-footer {
+
+    border-top:
+      1px solid #e5e5e5;
+
+    border-bottom:
+      1px solid #e5e5e5;
+
+    display: grid;
+
+    grid-template-columns:
+      repeat(
+        3,
+        1fr
+      );
+
+    padding:
+      24px
+      0;
+
+  }
+
+
+  .article-footer div {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+  }
+
+
+  .article-footer span {
+
+    color: #999999;
+
+    font-size: 10px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.08em;
+
+  }
+
+
+  .article-footer strong {
+
+    font-size: 12px;
+
+    font-weight: 500;
+
+  }
+
+
+  /* =================================
+     SITE FOOTER
+  ================================= */
+
+  .site-footer {
+
+    width:
+      min(
+        1200px,
+        calc(100% - 64px)
+      );
+
+    margin:
+      80px
+      auto
+      0;
+
+    padding:
+      24px
+      0
+      40px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    border-top:
+      1px solid #e5e5e5;
+
+    color: #999999;
+
+    font-size: 11px;
+
+  }
+
+
+  /* =================================
+     MOBILE
+  ================================= */
+
+  @media (max-width: 700px) {
+
+    .site-header,
+    main,
+    .site-footer {
+
+      width:
+        calc(100% - 40px);
+
+    }
+
+
+    .site-header {
+
+      height: 68px;
+
+    }
+
+
+    nav {
+
+      gap: 16px;
+
+    }
+
+
+    .article-header {
+
+      margin:
+        72px
+        0
+        48px;
+
+    }
+
+
+    h1 {
+
+      font-size: 46px;
+
+    }
+
+
+    .intro {
+
+      font-size: 15px;
+
+    }
+
+
+    .article-layout {
+
+      display: block;
+
+      margin:
+        64px
+        0;
+
+    }
+
+
+    aside {
+
+      margin-bottom: 32px;
+
+      flex-direction: row;
+
+      gap: 16px;
+
+    }
+
+
+    article {
+
+      font-size: 15px;
+
+      line-height: 1.9;
+
+    }
+
+
+    .article-footer {
+
+      grid-template-columns: 1fr;
+
+      gap: 20px;
+
+    }
+
+
+    .site-footer {
+
+      margin-top: 60px;
+
+    }
+
+  }
+
+</style>
