@@ -55,7 +55,7 @@ content:
         label: Tags
         type: string
         required: false
-        list:true
+        list: true
         
       - name: location
         label: Location
