@@ -4,11 +4,7 @@ import { getCollection } from "astro:content";
 const contentEntries = await getCollection("entries");
 
 const entries = contentEntries
-  .sort(
-    (a, b) =>
-      b.data.date.getTime() -
-      a.data.date.getTime()
-  )
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
   .map((entry) => ({
     id: entry.id,
     date: entry.data.date
@@ -24,1338 +20,573 @@ const entries = contentEntries
     description: entry.data.description,
     cover: entry.data.cover || "",
   }));
+
+const base = import.meta.env.BASE_URL;
 ---
 
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
-
+    <meta name="viewport" content="width=device-width" />
     <title>for the record</title>
-
     <meta
       name="description"
-      content="A personal archive of travel, film, food, music, and life."
+      content="A personal archive of travel, films, food, music, and life."
     />
   </head>
 
   <body>
-
-    <!-- HEADER -->
-
     <header class="site-header">
+      <a href={base} class="logo">for the record</a>
 
-      <a href="/" class="logo">
-        for the record
-      </a>
-
-      <nav>
-        <button
-          class="search-button"
-          type="button"
-          aria-expanded="false"
-          aria-controls="search-panel"
-        >
-          search
-        </button>
-      </nav>
-
+      <button class="search-button" id="searchToggle" type="button">
+        SEARCH
+      </button>
     </header>
 
-
-    <!-- SEARCH -->
-
-    <section
-      id="search-panel"
-      class="search-panel"
-      aria-hidden="true"
-    >
-
+    <!-- Search -->
+    <section class="search-panel" id="searchPanel" aria-hidden="true">
       <div class="search-inner">
-
-        <div class="search-top">
-
-          <span>SEARCH</span>
-
-          <button
-            id="search-close"
-            type="button"
-          >
-            CLOSE
-          </button>
-
-        </div>
-
         <input
-          id="search-input"
+          id="searchInput"
           type="search"
           placeholder="Search entries..."
           autocomplete="off"
         />
 
-        <div
-          id="search-results"
-          class="search-results"
-        ></div>
-
+        <button id="searchClose" type="button" aria-label="Close search">
+          CLOSE
+        </button>
       </div>
-
     </section>
 
-
-    <!-- MAIN -->
-
     <main>
-
-      <!-- CATEGORIES -->
-
-      <nav class="categories">
-
-        <button
-          class="category-button active"
-          data-category="ALL"
-          type="button"
-        >
-          ALL
-        </button>
-
-        <button
-          class="category-button"
-          data-category="TRAVEL"
-          type="button"
-        >
-          TRAVEL
-        </button>
-
-        <button
-          class="category-button"
-          data-category="FILM"
-          type="button"
-        >
-          FILM
-        </button>
-
-        <button
-          class="category-button"
-          data-category="FOOD"
-          type="button"
-        >
-          FOOD
-        </button>
-
-        <button
-          class="category-button"
-          data-category="MUSIC"
-          type="button"
-        >
-          MUSIC
-        </button>
-
-        <button
-          class="category-button"
-          data-category="LIFE"
-          type="button"
-        >
-          LIFE
-        </button>
-
+      <!-- Categories -->
+      <nav class="category-nav" aria-label="Categories">
+        <button class="category active" data-category="ALL">ALL</button>
+        <button class="category" data-category="TRAVEL">TRAVEL</button>
+        <button class="category" data-category="FILM">FILM</button>
+        <button class="category" data-category="FOOD">FOOD</button>
+        <button class="category" data-category="MUSIC">MUSIC</button>
+        <button class="category" data-category="LIFE">LIFE</button>
       </nav>
 
-
-      <!-- RECENT -->
-
-      <section class="recent">
-
-        <div class="section-header">
-
-          <h2>RECENT</h2>
-
+      <!-- Recent -->
+      <section class="recent-section">
+        <div class="section-heading">
+          <h1>RECENT</h1>
         </div>
 
-
-        <!-- ENTRY GRID -->
-
-        <div
-          class="entry-grid"
-          id="entry-grid"
-        >
-
+        <div class="entries-grid" id="entriesGrid">
           {
             entries.map((entry) => (
-
               <a
-                href={`/journal/${entry.id}`}
+                href={`${base}journal/${entry.id}`}
                 class="entry-card"
                 data-category={entry.category}
-                data-title={entry.title}
-                data-date={entry.date}
-                data-location={entry.location}
+                data-search={`${entry.title} ${entry.location} ${entry.category} ${entry.description}`}
               >
-
                 <div class="entry-image">
-
-                  {
-                    entry.cover ? (
-                      <img
-                        src={entry.cover}
-                        alt={entry.title}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span>PHOTO</span>
-                    )
-                  }
-
+                  {entry.cover ? (
+                    <img src={entry.cover} alt={entry.title} loading="lazy" />
+                  ) : (
+                    <span>PHOTO</span>
+                  )}
                 </div>
-
 
                 <div class="entry-info">
+                  <div class="entry-date">{entry.date}</div>
+
+                  <h2>{entry.title}</h2>
 
                   <div class="entry-meta">
-
-                    <span>
-                      {entry.date}
-                    </span>
-
-                    <span>
-                      {entry.category}
-                    </span>
-
+                    <span>{entry.location}</span>
+                    <span>{entry.category}</span>
                   </div>
 
-
-                  <h3>
-                    {entry.title}
-                  </h3>
-
-
-                  <p>
-                    {entry.location}
-                  </p>
-
+                  <p>{entry.description}</p>
                 </div>
-
               </a>
-
             ))
           }
-
         </div>
 
-
-        <!-- EMPTY -->
-
-        <div
-          id="empty-state"
-          class="empty-state"
-          hidden
-        >
-          No entries found.
+        <div class="no-results" id="noResults">
+          NO ENTRIES FOUND
         </div>
-
       </section>
-
     </main>
 
-
-    <!-- FOOTER -->
-
     <footer class="site-footer">
-
-      <span>
-        for the record
-      </span>
-
-      <span>
-        © 2026
-      </span>
-
+      <div>FOR THE RECORD</div>
+      <div>© 2026</div>
     </footer>
+  </body>
 
+  <script>
+    const searchToggle = document.getElementById("searchToggle");
+    const searchPanel = document.getElementById("searchPanel");
+    const searchInput = document.getElementById("searchInput");
+    const searchClose = document.getElementById("searchClose");
 
-    <!-- SEARCH SCRIPT -->
+    const categoryButtons = document.querySelectorAll(".category");
+    const entryCards = document.querySelectorAll(".entry-card");
+    const noResults = document.getElementById("noResults");
 
-    <script>
+    let activeCategory = "ALL";
+    let searchTerm = "";
 
-      const searchButton =
-        document.querySelector(".search-button");
+    function updateEntries() {
+      let visibleCount = 0;
 
-      const searchPanel =
-        document.querySelector("#search-panel");
+      entryCards.forEach((card) => {
+        const category = card.dataset.category || "";
+        const searchText = card.dataset.search || "";
 
-      const searchClose =
-        document.querySelector("#search-close");
+        const categoryMatch =
+          activeCategory === "ALL" || category === activeCategory;
 
-      const searchInput =
-        document.querySelector("#search-input");
+        const searchMatch = searchText
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
 
-      const searchResults =
-        document.querySelector("#search-results");
+        if (categoryMatch && searchMatch) {
+          card.classList.remove("hidden");
+          visibleCount++;
+        } else {
+          card.classList.add("hidden");
+        }
+      });
 
-      const cards =
-        Array.from(
-          document.querySelectorAll(".entry-card")
-        );
+      if (visibleCount === 0) {
+        noResults.classList.add("visible");
+      } else {
+        noResults.classList.remove("visible");
+      }
+    }
 
-      const categoryButtons =
-        Array.from(
-          document.querySelectorAll(
-            ".category-button"
-          )
-        );
+    function openSearch() {
+      searchPanel.classList.add("open");
+      searchPanel.setAttribute("aria-hidden", "false");
 
-      const emptyState =
-        document.querySelector(
-          "#empty-state"
-        );
+      setTimeout(() => {
+        searchInput?.focus();
+      }, 100);
+    }
 
+    function closeSearch() {
+      searchPanel.classList.remove("open");
+      searchPanel.setAttribute("aria-hidden", "true");
 
-      let activeCategory = "ALL";
+      if (searchInput) {
+        searchInput.value = "";
+      }
 
+      searchTerm = "";
+      updateEntries();
+    }
 
-      /* CATEGORY FILTER */
+    searchToggle?.addEventListener("click", openSearch);
+    searchClose?.addEventListener("click", closeSearch);
 
-      function filterEntries() {
+    searchInput?.addEventListener("input", (event) => {
+      const target = event.target as HTMLInputElement;
+      searchTerm = target.value.trim();
+      updateEntries();
+    });
 
-        const query =
-          searchInput.value
-            .trim()
-            .toLowerCase();
+    categoryButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const category = button.dataset.category || "ALL";
 
-        let visibleCount = 0;
+        activeCategory = category;
 
-
-        cards.forEach((card) => {
-
-          const category =
-            card.dataset.category || "";
-
-          const title =
-            card.dataset.title || "";
-
-          const date =
-            card.dataset.date || "";
-
-          const location =
-            card.dataset.location || "";
-
-
-          const matchesCategory =
-            activeCategory === "ALL" ||
-            category === activeCategory;
-
-
-          const searchText =
-            `${title} ${date} ${location} ${category}`
-              .toLowerCase();
-
-
-          const matchesSearch =
-            !query ||
-            searchText.includes(query);
-
-
-          const visible =
-            matchesCategory &&
-            matchesSearch;
-
-
-          card.style.display =
-            visible ? "" : "none";
-
-
-          if (visible) {
-            visibleCount++;
-          }
-
+        categoryButtons.forEach((item) => {
+          item.classList.remove("active");
         });
 
+        button.classList.add("active");
 
-        emptyState.hidden =
-          visibleCount !== 0;
+        updateEntries();
+      });
+    });
 
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeSearch();
       }
+    });
 
+    updateEntries();
+  </script>
 
-      /* CATEGORY BUTTONS */
-
-      categoryButtons.forEach(
-        (button) => {
-
-          button.addEventListener(
-            "click",
-            () => {
-
-              activeCategory =
-                button.dataset.category;
-
-
-              categoryButtons.forEach(
-                (item) => {
-
-                  item.classList.remove(
-                    "active"
-                  );
-
-                }
-              );
-
-
-              button.classList.add(
-                "active"
-              );
-
-
-              filterEntries();
-
-            }
-          );
-
-        }
-      );
-
-
-      /* OPEN SEARCH */
-
-      function openSearch() {
-
-        searchPanel.classList.add(
-          "open"
-        );
-
-        searchPanel.setAttribute(
-          "aria-hidden",
-          "false"
-        );
-
-        searchButton.setAttribute(
-          "aria-expanded",
-          "true"
-        );
-
-
-        setTimeout(() => {
-
-          searchInput.focus();
-
-        }, 50);
-
-      }
-
-
-      /* CLOSE SEARCH */
-
-      function closeSearch() {
-
-        searchPanel.classList.remove(
-          "open"
-        );
-
-        searchPanel.setAttribute(
-          "aria-hidden",
-          "true"
-        );
-
-        searchButton.setAttribute(
-          "aria-expanded",
-          "false"
-        );
-
-        searchInput.value = "";
-
-        searchResults.innerHTML = "";
-
-      }
-
-
-      searchButton.addEventListener(
-        "click",
-        openSearch
-      );
-
-
-      searchClose.addEventListener(
-        "click",
-        closeSearch
-      );
-
-
-      /* SEARCH */
-
-      searchInput.addEventListener(
-        "input",
-        () => {
-
-          const query =
-            searchInput.value
-              .trim()
-              .toLowerCase();
-
-
-          if (!query) {
-
-            searchResults.innerHTML = "";
-
-            return;
-
-          }
-
-
-          const matches =
-            cards.filter(
-              (card) => {
-
-                const text =
-                  card.innerText
-                    .toLowerCase();
-
-                return text.includes(query);
-
-              }
-            );
-
-
-          if (!matches.length) {
-
-            searchResults.innerHTML = `
-              <div class="search-empty">
-                No entries found.
-              </div>
-            `;
-
-            return;
-
-          }
-
-
-          searchResults.innerHTML =
-            matches
-              .map((card) => {
-
-                const title =
-                  card.dataset.title;
-
-                const category =
-                  card.dataset.category;
-
-                const date =
-                  card.dataset.date;
-
-                const href =
-                  card.getAttribute(
-                    "href"
-                  );
-
-
-                return `
-                  <a
-                    href="${href}"
-                    class="search-result"
-                  >
-
-                    <span>
-                      ${date}
-                    </span>
-
-                    <strong>
-                      ${title}
-                    </strong>
-
-                    <span>
-                      ${category}
-                    </span>
-
-                  </a>
-                `;
-
-              })
-              .join("");
-
-        }
-      );
-
-
-      /* ESC */
-
-      document.addEventListener(
-        "keydown",
-        (event) => {
-
-          if (
-            event.key === "Escape"
-          ) {
-
-            closeSearch();
-
-          }
-
-        }
-      );
-
-    </script>
-
-  </body>
-</html>
-
-
-<style>
-
-  /* ================================
-     RESET
-  ================================= */
-
-  :global(*) {
-    box-sizing: border-box;
-  }
-
-
-  :global(body) {
-
-    margin: 0;
-
-    background: #ffffff;
-
-    color: #111111;
-
-    font-family:
-      Inter,
-      "Noto Sans TC",
-      Helvetica,
-      Arial,
-      system-ui,
-      sans-serif;
-
-  }
-
-
-  :global(a) {
-
-    color: inherit;
-
-    text-decoration: none;
-
-  }
-
-
-  :global(button) {
-
-    font-family: inherit;
-
-  }
-
-
-  /* ================================
-     HEADER
-  ================================= */
-
-  .site-header {
-
-    width:
-      min(
-        1200px,
-        calc(100% - 64px)
-      );
-
-    height: 80px;
-
-    margin: 0 auto;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    border-bottom:
-      1px solid #e5e5e5;
-
-  }
-
-
-  .logo {
-
-    font-size: 15px;
-
-    font-weight: 600;
-
-    letter-spacing: -0.02em;
-
-  }
-
-
-  .search-button {
-
-    border: 0;
-
-    background: transparent;
-
-    padding: 0;
-
-    color: #6f6f6f;
-
-    font-size: 12px;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.08em;
-
-    cursor: pointer;
-
-  }
-
-
-  .search-button:hover {
-
-    color: #111111;
-
-  }
-
-
-  /* ================================
-     SEARCH PANEL
-  ================================= */
-
-  .search-panel {
-
-    display: none;
-
-    border-bottom:
-      1px solid #e5e5e5;
-
-    background: #ffffff;
-
-  }
-
-
-  .search-panel.open {
-
-    display: block;
-
-  }
-
-
-  .search-inner {
-
-    width:
-      min(
-        1200px,
-        calc(100% - 64px)
-      );
-
-    margin: 0 auto;
-
-    padding:
-      28px
-      0
-      36px;
-
-  }
-
-
-  .search-top {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    margin-bottom: 20px;
-
-    color: #999999;
-
-    font-size: 10px;
-
-    letter-spacing: 0.08em;
-
-  }
-
-
-  .search-top button {
-
-    border: 0;
-
-    background: transparent;
-
-    padding: 0;
-
-    color: #999999;
-
-    font-size: 10px;
-
-    letter-spacing: 0.08em;
-
-    cursor: pointer;
-
-  }
-
-
-  .search-top button:hover {
-
-    color: #111111;
-
-  }
-
-
-  #search-input {
-
-    width: 100%;
-
-    border: 0;
-
-    border-bottom:
-      1px solid #111111;
-
-    outline: none;
-
-    padding:
-      12px
-      0;
-
-    background: transparent;
-
-    color: #111111;
-
-    font-family: inherit;
-
-    font-size: 28px;
-
-  }
-
-
-  #search-input::placeholder {
-
-    color: #bbbbbb;
-
-  }
-
-
-  .search-results {
-
-    display: flex;
-
-    flex-direction: column;
-
-  }
-
-
-  .search-result {
-
-    display: grid;
-
-    grid-template-columns:
-      120px
-      1fr
-      100px;
-
-    gap: 20px;
-
-    padding:
-      18px
-      0;
-
-    border-bottom:
-      1px solid #eeeeee;
-
-    align-items: center;
-
-  }
-
-
-  .search-result span {
-
-    color: #999999;
-
-    font-size: 10px;
-
-    letter-spacing: 0.08em;
-
-    text-transform: uppercase;
-
-  }
-
-
-  .search-result strong {
-
-    font-size: 15px;
-
-    font-weight: 500;
-
-  }
-
-
-  .search-empty {
-
-    padding:
-      24px
-      0;
-
-    color: #999999;
-
-    font-size: 13px;
-
-  }
-
-
-  /* ================================
-     MAIN
-  ================================= */
-
-  main {
-
-    width:
-      min(
-        1200px,
-        calc(100% - 64px)
-      );
-
-    margin: 0 auto;
-
-  }
-
-
-  /* ================================
-     CATEGORIES
-  ================================= */
-
-  .categories {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-bottom:
-      1px solid #e5e5e5;
-
-    overflow-x: auto;
-
-  }
-
-
-  .category-button {
-
-    flex: 0 0 auto;
-
-    border: 0;
-
-    background: transparent;
-
-    padding:
-      20px
-      34px;
-
-    color: #999999;
-
-    font-size: 11px;
-
-    letter-spacing: 0.08em;
-
-    cursor: pointer;
-
-  }
-
-
-  .category-button:hover {
-
-    color: #111111;
-
-  }
-
-
-  .category-button.active {
-
-    color: #111111;
-
-  }
-
-
-  /* ================================
-     RECENT
-  ================================= */
-
-  .recent {
-
-    padding:
-      80px
-      0
-      120px;
-
-  }
-
-
-  .section-header {
-
-    margin-bottom: 32px;
-
-  }
-
-
-  .section-header h2 {
-
-    margin: 0;
-
-    color: #111111;
-
-    font-size: 11px;
-
-    font-weight: 500;
-
-    letter-spacing: 0.1em;
-
-  }
-
-
-  /* ================================
-     ENTRY GRID
-  ================================= */
-
-  .entry-grid {
-
-    display: grid;
-
-    grid-template-columns:
-      repeat(
-        4,
-        minmax(0, 1fr)
-      );
-
-    column-gap: 20px;
-
-    row-gap: 56px;
-
-  }
-
-
-  .entry-card {
-
-    display: block;
-
-    min-width: 0;
-
-  }
-
-
-  /* ================================
-     ENTRY IMAGE
-  ================================= */
-
-  .entry-image {
-
-    width: 100%;
-
-    aspect-ratio: 1 / 1;
-
-    background: #f3f3f3;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    overflow: hidden;
-
-    margin-bottom: 18px;
-
-  }
-
-
-  .entry-image span {
-
-    color: #aaaaaa;
-
-    font-size: 10px;
-
-    letter-spacing: 0.1em;
-
-  }
-
-
-  .entry-image img {
-
-    display: block;
-
-    width: 100%;
-
-    height: 100%;
-
-    object-fit: cover;
-
-    transition:
-      transform
-      0.4s
-      ease;
-
-  }
-
-
-  .entry-card:hover
-  .entry-image img {
-
-    transform: scale(1.02);
-
-  }
-
-
-  /* ================================
-     ENTRY INFO
-  ================================= */
-
-  .entry-meta {
-
-    display: flex;
-
-    justify-content: space-between;
-
-    gap: 10px;
-
-    margin-bottom: 10px;
-
-    color: #999999;
-
-    font-size: 9px;
-
-    letter-spacing: 0.06em;
-
-    text-transform: uppercase;
-
-  }
-
-
-  .entry-info h3 {
-
-    margin: 0;
-
-    color: #111111;
-
-    font-size: 15px;
-
-    line-height: 1.35;
-
-    font-weight: 500;
-
-    letter-spacing: -0.02em;
-
-  }
-
-
-  .entry-info p {
-
-    margin:
-      8px
-      0
-      0;
-
-    color: #999999;
-
-    font-size: 10px;
-
-    letter-spacing: 0.05em;
-
-    text-transform: uppercase;
-
-  }
-
-
-  /* ================================
-     EMPTY STATE
-  ================================= */
-
-  .empty-state {
-
-    padding:
-      80px
-      0;
-
-    color: #999999;
-
-    font-size: 13px;
-
-  }
-
-
-  /* ================================
-     FOOTER
-  ================================= */
-
-  .site-footer {
-
-    width:
-      min(
-        1200px,
-        calc(100% - 64px)
-      );
-
-    margin: 0 auto;
-
-    padding:
-      24px
-      0
-      40px;
-
-    display: flex;
-
-    justify-content: space-between;
-
-    border-top:
-      1px solid #e5e5e5;
-
-    color: #999999;
-
-    font-size: 11px;
-
-  }
-
-
-  /* ================================
-     TABLET
-  ================================= */
-
-  @media (max-width: 900px) {
-
-    .entry-grid {
-
-      grid-template-columns:
-        repeat(
-          2,
-          minmax(0, 1fr)
-        );
-
+  <style>
+    :global(*) {
+      box-sizing: border-box;
     }
 
-  }
-
-
-  /* ================================
-     MOBILE
-  ================================= */
-
-  @media (max-width: 700px) {
-
-    .site-header,
-    main,
-    .site-footer,
-    .search-inner {
-
-      width:
-        calc(100% - 40px);
-
+    :global(html) {
+      margin: 0;
+      padding: 0;
+      background: #fff;
     }
 
+    :global(body) {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #111;
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial,
+        sans-serif;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    :global(button),
+    :global(input) {
+      font: inherit;
+    }
+
+    :global(a) {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* =========================
+       Header
+       ========================= */
 
     .site-header {
+      width: 100%;
+      max-width: 1200px;
+      height: 88px;
+      margin: 0 auto;
+      padding: 0 24px;
 
-      height: 68px;
-
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-
-    .categories {
-
-      justify-content: flex-start;
-
-      margin-left: -20px;
-
-      margin-right: -20px;
-
-      padding-left: 4px;
-
+    .logo {
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
     }
 
-
-    .category-button {
-
-      padding:
-        18px
-        20px;
-
+    .search-button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #111;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
     }
 
-
-    .recent {
-
-      padding:
-        60px
-        0
-        80px;
-
+    .search-button:hover {
+      opacity: 0.5;
     }
 
+    /* =========================
+       Search
+       ========================= */
 
-    .entry-grid {
-
-      grid-template-columns:
-        repeat(
-          2,
-          minmax(0, 1fr)
-        );
-
-      column-gap: 14px;
-
-      row-gap: 40px;
-
+    .search-panel {
+      display: none;
+      border-top: 1px solid #e5e5e5;
+      border-bottom: 1px solid #e5e5e5;
     }
 
+    .search-panel.open {
+      display: block;
+    }
+
+    .search-inner {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 24px;
+
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .search-inner input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #111;
+      font-size: 18px;
+    }
+
+    .search-inner input::placeholder {
+      color: #999;
+    }
+
+    .search-inner button {
+      flex-shrink: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #666;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+
+    .search-inner button:hover {
+      color: #111;
+    }
+
+    /* =========================
+       Category navigation
+       ========================= */
+
+    .category-nav {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+
+      display: flex;
+      align-items: center;
+      gap: 28px;
+
+      border-top: 1px solid #e5e5e5;
+      border-bottom: 1px solid #e5e5e5;
+
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .category-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category {
+      flex-shrink: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #999;
+
+      font-size: 10px;
+      letter-spacing: 0.08em;
+
+      cursor: pointer;
+    }
+
+    .category:hover {
+      color: #111;
+    }
+
+    .category.active {
+      color: #111;
+    }
+
+    /* =========================
+       Recent
+       ========================= */
+
+    .recent-section {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 64px 24px 100px;
+    }
+
+    .section-heading {
+      margin-bottom: 32px;
+    }
+
+    .section-heading h1 {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+    }
+
+    /* =========================
+       Entry grid
+       ========================= */
+
+    .entries-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 48px 24px;
+    }
+
+    .entry-card {
+      display: block;
+      min-width: 0;
+    }
+
+    .entry-card.hidden {
+      display: none;
+    }
+
+    .entry-image {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      margin-bottom: 18px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background: #f4f4f4;
+      overflow: hidden;
+    }
+
+    .entry-image img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .entry-image span {
+      color: #aaa;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+    }
+
+    .entry-card:hover .entry-image span {
+      color: #777;
+    }
+
+    .entry-info {
+      min-width: 0;
+    }
+
+    .entry-date {
+      margin-bottom: 10px;
+      color: #999;
+      font-size: 9px;
+      letter-spacing: 0.06em;
+    }
+
+    .entry-info h2 {
+      margin: 0 0 8px;
+
+      font-size: 16px;
+      line-height: 1.3;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
 
     .entry-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
 
+      margin-bottom: 12px;
+
+      color: #777;
+      font-size: 9px;
+      letter-spacing: 0.04em;
+    }
+
+    .entry-meta span + span::before {
+      content: "/";
+      margin-right: 8px;
+      color: #bbb;
+    }
+
+    .entry-info p {
+      margin: 0;
+
+      color: #777;
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    /* =========================
+       No results
+       ========================= */
+
+    .no-results {
+      display: none;
+      padding: 80px 0;
+      color: #999;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+
+    .no-results.visible {
       display: block;
-
     }
 
+    /* =========================
+       Footer
+       ========================= */
 
-    .entry-meta span {
+    .site-footer {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
 
-      display: block;
+      display: flex;
+      justify-content: space-between;
 
-      margin-bottom: 5px;
+      border-top: 1px solid #e5e5e5;
 
+      color: #999;
+      font-size: 9px;
+      letter-spacing: 0.08em;
     }
 
+    /* =========================
+       Tablet
+       ========================= */
 
-    .entry-info h3 {
-
-      font-size: 14px;
-
+    @media (max-width: 900px) {
+      .entries-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
+    /* =========================
+       Mobile
+       ========================= */
 
-    .search-result {
+    @media (max-width: 560px) {
+      .site-header {
+        height: 72px;
+        padding: 0 18px;
+      }
 
-      grid-template-columns: 1fr;
+      .category-nav {
+        padding: 14px 18px;
+        gap: 22px;
+      }
 
-      gap: 6px;
+      .recent-section {
+        padding: 48px 18px 72px;
+      }
 
+      .entries-grid {
+        grid-template-columns: 1fr;
+        gap: 42px;
+      }
+
+      .entry-image {
+        aspect-ratio: 4 / 3;
+      }
+
+      .site-footer {
+        padding: 20px 18px;
+      }
+
+      .search-inner {
+        padding: 18px;
+      }
     }
-
-
-    #search-input {
-
-      font-size: 22px;
-
-    }
-
-  }
-
-
-  /* ================================
-     SMALL MOBILE
-  ================================= */
-
-  @media (max-width: 480px) {
-
-    .entry-grid {
-
-      grid-template-columns: 1fr;
-
-    }
-
-  }
-
-</style>
+  </style>
+</html>
