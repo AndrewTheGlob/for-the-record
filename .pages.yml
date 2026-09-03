@@ -53,14 +53,19 @@ content:
 
       - name: tags
         label: Tags
-        type: string
-        list: true
+        type: reference
         required: false
+        options:
+          collection: tags
+          multiple: true
+          search: "name"
+          value: "{primary}"
+          label: "{primary}"
 
       - name: location
         label: Location
         type: string
-        required: true
+        required: false
 
       - name: description
         label: Description
@@ -113,3 +118,27 @@ content:
             - jpeg
             - png
             - webp
+
+  - name: tags
+    label: Tags
+    type: collection
+    path: src/data/tags
+    filename: "{primary}.md"
+
+    view:
+      primary: name
+      fields:
+        - name
+      sort:
+        - name
+
+    operations:
+      create: true
+      rename: true
+      delete: true
+
+    fields:
+      - name: name
+        label: Tag
+        type: string
+        required: true
