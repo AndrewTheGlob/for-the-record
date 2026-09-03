@@ -1,3 +1,3 @@
 ---
-name: Tokyo
+name: TOKYO
 ---
