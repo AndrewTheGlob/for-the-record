@@ -1,10 +1,15 @@
 ---
 title: "SUMMER SONIC 2026"
 date: 2026-08-14
-category: "MUSIC"
 location: "TOKYO / JAPAN"
 description: "A day at Summer Sonic 2026 in Tokyo — music, people, heat, and everything in between."
 cover: ""
+tags:
+  - TOKYO
+  - MUSIC
+  - FESTIVAL
+  - SUMMER SONIC
+rating: 5
 ---
 
 This is where the story begins.

@@ -1,10 +1,14 @@
 ---
 title: "TOKYO WALK"
 date: 2026-08-05
-category: "TRAVEL"
 location: "TOKYO / JAPAN"
 description: "A slow walk through Tokyo with no particular destination."
 cover: ""
+tags:
+  - TOKYO
+  - WALK
+  - JAPAN
+rating: 4
 ---
 
 Tokyo is a city that rewards walking.

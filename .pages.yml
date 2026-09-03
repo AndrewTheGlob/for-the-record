@@ -1,0 +1,115 @@
+media:
+  - name: images
+    label: Images
+    input: public/images
+    output: /images
+    extensions:
+      - jpg
+      - jpeg
+      - png
+      - webp
+    categories:
+      - image
+    rename: safe
+
+content:
+  - name: entries
+    label: Articles
+    type: collection
+    path: src/data/entries
+    filename: "{primary}.md"
+
+    view:
+      primary: title
+      fields:
+        - title
+        - date
+        - location
+        - rating
+      sort:
+        - date
+        - title
+      default:
+        sort: date
+        order: desc
+
+    operations:
+      create: true
+      rename: true
+      delete: true
+
+    fields:
+      - name: title
+        label: Title
+        type: string
+        required: true
+
+      - name: date
+        label: Date
+        type: date
+        required: true
+        options:
+          format: yyyy-MM-dd
+
+      - name: tags
+        label: Tags
+        type: string
+        list: true
+        required: false
+
+      - name: location
+        label: Location
+        type: string
+        required: true
+
+      - name: description
+        label: Description
+        type: text
+        required: true
+
+      - name: cover
+        label: Cover Image
+        type: image
+        required: false
+        options:
+          media: images
+          path: public/images
+          extensions:
+            - jpg
+            - jpeg
+            - png
+            - webp
+
+      - name: rating
+        label: Rating
+        type: select
+        required: true
+        options:
+          values:
+            - name: "0"
+              label: "☆☆☆☆☆☆"
+            - name: "1"
+              label: "★☆☆☆☆☆"
+            - name: "2"
+              label: "★★☆☆☆☆"
+            - name: "3"
+              label: "★★★☆☆☆"
+            - name: "4"
+              label: "★★★★☆☆"
+            - name: "5"
+              label: "★★★★★☆"
+            - name: "6"
+              label: "★★★★★★"
+
+      - name: body
+        label: Article Content
+        type: rich-text
+        options:
+          format: markdown
+          media: images
+          path: public/images
+          extensions:
+            - jpg
+            - jpeg
+            - png
+            - webp

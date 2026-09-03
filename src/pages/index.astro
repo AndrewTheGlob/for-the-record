@@ -3,6 +3,14 @@ import { getCollection } from "astro:content";
 
 const contentEntries = await getCollection("entries");
 
+function slugifyTag(tag: string) {
+  return tag
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
+
 const entries = contentEntries
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
   .map((entry) => ({
@@ -16,9 +24,9 @@ const entries = contentEntries
       .toUpperCase(),
     title: entry.data.title,
     location: entry.data.location,
-    category: entry.data.category,
     description: entry.data.description,
     cover: entry.data.cover || "",
+    tags: entry.data.tags || [],
   }));
 
 const base = import.meta.env.BASE_URL;
@@ -27,11 +35,14 @@ const base = import.meta.env.BASE_URL;
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
     <title>for the record</title>
     <meta
       name="description"
-      content="A personal archive of travel, films, food, music, and life."
+      content="Personal records of places, music, films, food, and life."
     />
   </head>
 
@@ -39,554 +50,453 @@ const base = import.meta.env.BASE_URL;
     <header class="site-header">
       <a href={base} class="logo">for the record</a>
 
-      <button class="search-button" id="searchToggle" type="button">
+      <button class="search-button" id="searchButton">
         SEARCH
       </button>
     </header>
 
-    <!-- Search -->
-    <section class="search-panel" id="searchPanel" aria-hidden="true">
+    <div class="search-panel" id="searchPanel">
       <div class="search-inner">
         <input
+          type="text"
           id="searchInput"
-          type="search"
-          placeholder="Search entries..."
+          placeholder="Search..."
           autocomplete="off"
         />
 
-        <button id="searchClose" type="button" aria-label="Close search">
-          CLOSE
-        </button>
+        <button id="closeSearch">CLOSE</button>
       </div>
-    </section>
+    </div>
 
-    <main>
-      <!-- Categories -->
-      <nav class="category-nav" aria-label="Categories">
-        <button class="category active" data-category="ALL">ALL</button>
-        <button class="category" data-category="TRAVEL">TRAVEL</button>
-        <button class="category" data-category="FILM">FILM</button>
-        <button class="category" data-category="FOOD">FOOD</button>
-        <button class="category" data-category="MUSIC">MUSIC</button>
-        <button class="category" data-category="LIFE">LIFE</button>
-      </nav>
-
-      <!-- Recent -->
+    <main class="site-main">
       <section class="recent-section">
-        <div class="section-heading">
-          <h1>RECENT</h1>
-        </div>
+        <div class="section-label">RECENT</div>
 
-        <div class="entries-grid" id="entriesGrid">
+        <div class="entries" id="entries">
           {
             entries.map((entry) => (
-              <a
-                href={`${base}journal/${entry.id}`}
+              <article
                 class="entry-card"
-                data-category={entry.category}
-                data-search={`${entry.title} ${entry.location} ${entry.category} ${entry.description}`}
+                data-title={entry.title.toLowerCase()}
+                data-description={entry.description.toLowerCase()}
+                data-tags={entry.tags.join(" ").toLowerCase()}
               >
-                <div class="entry-image">
-                  {entry.cover ? (
-                    <img src={entry.cover} alt={entry.title} loading="lazy" />
-                  ) : (
-                    <span>PHOTO</span>
-                  )}
-                </div>
-
-                <div class="entry-info">
-                  <div class="entry-date">{entry.date}</div>
-
-                  <h2>{entry.title}</h2>
-
-                  <div class="entry-meta">
-                    <span>{entry.location}</span>
-                    <span>{entry.category}</span>
+                <a
+                  href={`${base}journal/${entry.id}`}
+                  class="entry-link"
+                >
+                  <div class="entry-image">
+                    {entry.cover ? (
+                      <img
+                        src={entry.cover}
+                        alt={entry.title}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span>PHOTO</span>
+                    )}
                   </div>
 
-                  <p>{entry.description}</p>
-                </div>
-              </a>
+                  <div class="entry-date">
+                    {entry.date}
+                  </div>
+
+                  <h2 class="entry-title">
+                    {entry.title}
+                  </h2>
+
+                  <div class="entry-location">
+                    {entry.location}
+                  </div>
+                </a>
+
+                {
+                  entry.tags.length > 0 && (
+                    <div class="entry-tags">
+                      {entry.tags.map((tag) => (
+                        <a
+                          href={`${base}tags/${slugifyTag(tag)}`}
+                          class="tag"
+                        >
+                          #{tag}
+                        </a>
+                      ))}
+                    </div>
+                  )
+                }
+
+                <p class="entry-description">
+                  {entry.description}
+                </p>
+              </article>
             ))
           }
         </div>
 
         <div class="no-results" id="noResults">
-          NO ENTRIES FOUND
+          NO RESULTS
         </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <div>FOR THE RECORD</div>
-      <div>© 2026</div>
+      <span>FOR THE RECORD</span>
+      <span>© 2026</span>
     </footer>
-  </body>
 
-  <script>
-    const searchToggle = document.getElementById("searchToggle");
-    const searchPanel = document.getElementById("searchPanel");
-    const searchInput = document.getElementById("searchInput");
-    const searchClose = document.getElementById("searchClose");
+    <script>
+      const searchButton =
+        document.getElementById("searchButton");
 
-    const categoryButtons = document.querySelectorAll(".category");
-    const entryCards = document.querySelectorAll(".entry-card");
-    const noResults = document.getElementById("noResults");
+      const searchPanel =
+        document.getElementById("searchPanel");
 
-    let activeCategory = "ALL";
-    let searchTerm = "";
+      const searchInput =
+        document.getElementById("searchInput");
 
-    function updateEntries() {
-      let visibleCount = 0;
+      const closeSearch =
+        document.getElementById("closeSearch");
 
-      entryCards.forEach((card) => {
-        const category = card.dataset.category || "";
-        const searchText = card.dataset.search || "";
+      const cards =
+        Array.from(document.querySelectorAll(".entry-card"));
 
-        const categoryMatch =
-          activeCategory === "ALL" || category === activeCategory;
+      const noResults =
+        document.getElementById("noResults");
 
-        const searchMatch = searchText
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
+      searchButton?.addEventListener("click", () => {
+        searchPanel?.classList.add("open");
+        searchInput?.focus();
+      });
 
-        if (categoryMatch && searchMatch) {
-          card.classList.remove("hidden");
-          visibleCount++;
-        } else {
-          card.classList.add("hidden");
+      closeSearch?.addEventListener("click", () => {
+        searchPanel?.classList.remove("open");
+
+        if (searchInput) {
+          searchInput.value = "";
+        }
+
+        cards.forEach((card) => {
+          card.style.display = "";
+        });
+
+        if (noResults) {
+          noResults.style.display = "none";
         }
       });
 
-      if (visibleCount === 0) {
-        noResults.classList.add("visible");
-      } else {
-        noResults.classList.remove("visible");
-      }
-    }
+      searchInput?.addEventListener("input", () => {
+        const query =
+          searchInput.value.trim().toLowerCase();
 
-    function openSearch() {
-      searchPanel.classList.add("open");
-      searchPanel.setAttribute("aria-hidden", "false");
+        let visibleCount = 0;
 
-      setTimeout(() => {
-        searchInput?.focus();
-      }, 100);
-    }
+        cards.forEach((card) => {
+          const title =
+            card.getAttribute("data-title") || "";
 
-    function closeSearch() {
-      searchPanel.classList.remove("open");
-      searchPanel.setAttribute("aria-hidden", "true");
+          const description =
+            card.getAttribute("data-description") || "";
 
-      if (searchInput) {
-        searchInput.value = "";
-      }
+          const tags =
+            card.getAttribute("data-tags") || "";
 
-      searchTerm = "";
-      updateEntries();
-    }
+          const matches =
+            !query ||
+            title.includes(query) ||
+            description.includes(query) ||
+            tags.includes(query);
 
-    searchToggle?.addEventListener("click", openSearch);
-    searchClose?.addEventListener("click", closeSearch);
+          card.style.display = matches ? "" : "block";
 
-    searchInput?.addEventListener("input", (event) => {
-      const target = event.target as HTMLInputElement;
-      searchTerm = target.value.trim();
-      updateEntries();
-    });
-
-    categoryButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const category = button.dataset.category || "ALL";
-
-        activeCategory = category;
-
-        categoryButtons.forEach((item) => {
-          item.classList.remove("active");
+          if (matches) {
+            visibleCount++;
+          }
         });
 
-        button.classList.add("active");
-
-        updateEntries();
+        if (noResults) {
+          noResults.style.display =
+            visibleCount === 0 ? "block" : "none";
+        }
       });
-    });
 
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        closeSearch();
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          searchPanel?.classList.remove("open");
+        }
+      });
+    </script>
+
+    <style>
+      :global(*) {
+        box-sizing: border-box;
       }
-    });
 
-    updateEntries();
-  </script>
-
-  <style>
-    :global(*) {
-      box-sizing: border-box;
-    }
-
-    :global(html) {
-      margin: 0;
-      padding: 0;
-      background: #fff;
-    }
-
-    :global(body) {
-      margin: 0;
-      padding: 0;
-      background: #fff;
-      color: #111;
-      font-family:
-        -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial,
-        sans-serif;
-      font-weight: 400;
-      letter-spacing: 0;
-    }
-
-    :global(button),
-    :global(input) {
-      font: inherit;
-    }
-
-    :global(a) {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    /* =========================
-       Header
-       ========================= */
-
-    .site-header {
-      width: 100%;
-      max-width: 1200px;
-      height: 88px;
-      margin: 0 auto;
-      padding: 0 24px;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .logo {
-      font-size: 16px;
-      font-weight: 500;
-      letter-spacing: -0.02em;
-    }
-
-    .search-button {
-      padding: 0;
-      border: 0;
-      background: transparent;
-      color: #111;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-    }
-
-    .search-button:hover {
-      opacity: 0.5;
-    }
-
-    /* =========================
-       Search
-       ========================= */
-
-    .search-panel {
-      display: none;
-      border-top: 1px solid #e5e5e5;
-      border-bottom: 1px solid #e5e5e5;
-    }
-
-    .search-panel.open {
-      display: block;
-    }
-
-    .search-inner {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px 24px;
-
-      display: flex;
-      align-items: center;
-      gap: 24px;
-    }
-
-    .search-inner input {
-      width: 100%;
-      border: 0;
-      outline: 0;
-      background: transparent;
-      color: #111;
-      font-size: 18px;
-    }
-
-    .search-inner input::placeholder {
-      color: #999;
-    }
-
-    .search-inner button {
-      flex-shrink: 0;
-      padding: 0;
-      border: 0;
-      background: transparent;
-      color: #666;
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-    }
-
-    .search-inner button:hover {
-      color: #111;
-    }
-
-    /* =========================
-       Category navigation
-       ========================= */
-
-    .category-nav {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 16px 24px;
-
-      display: flex;
-      align-items: center;
-      gap: 28px;
-
-      border-top: 1px solid #e5e5e5;
-      border-bottom: 1px solid #e5e5e5;
-
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-
-    .category-nav::-webkit-scrollbar {
-      display: none;
-    }
-
-    .category {
-      flex-shrink: 0;
-      padding: 0;
-      border: 0;
-      background: transparent;
-      color: #999;
-
-      font-size: 10px;
-      letter-spacing: 0.08em;
-
-      cursor: pointer;
-    }
-
-    .category:hover {
-      color: #111;
-    }
-
-    .category.active {
-      color: #111;
-    }
-
-    /* =========================
-       Recent
-       ========================= */
-
-    .recent-section {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 64px 24px 100px;
-    }
-
-    .section-heading {
-      margin-bottom: 32px;
-    }
-
-    .section-heading h1 {
-      margin: 0;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-    }
-
-    /* =========================
-       Entry grid
-       ========================= */
-
-    .entries-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 48px 24px;
-    }
-
-    .entry-card {
-      display: block;
-      min-width: 0;
-    }
-
-    .entry-card.hidden {
-      display: none;
-    }
-
-    .entry-image {
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      margin-bottom: 18px;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      background: #f4f4f4;
-      overflow: hidden;
-    }
-
-    .entry-image img {
-      width: 100%;
-      height: 100%;
-      display: block;
-      object-fit: cover;
-    }
-
-    .entry-image span {
-      color: #aaa;
-      font-size: 9px;
-      letter-spacing: 0.1em;
-    }
-
-    .entry-card:hover .entry-image span {
-      color: #777;
-    }
-
-    .entry-info {
-      min-width: 0;
-    }
-
-    .entry-date {
-      margin-bottom: 10px;
-      color: #999;
-      font-size: 9px;
-      letter-spacing: 0.06em;
-    }
-
-    .entry-info h2 {
-      margin: 0 0 8px;
-
-      font-size: 16px;
-      line-height: 1.3;
-      font-weight: 500;
-      letter-spacing: -0.02em;
-    }
-
-    .entry-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-
-      margin-bottom: 12px;
-
-      color: #777;
-      font-size: 9px;
-      letter-spacing: 0.04em;
-    }
-
-    .entry-meta span + span::before {
-      content: "/";
-      margin-right: 8px;
-      color: #bbb;
-    }
-
-    .entry-info p {
-      margin: 0;
-
-      color: #777;
-      font-size: 12px;
-      line-height: 1.65;
-    }
-
-    /* =========================
-       No results
-       ========================= */
-
-    .no-results {
-      display: none;
-      padding: 80px 0;
-      color: #999;
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      text-align: center;
-    }
-
-    .no-results.visible {
-      display: block;
-    }
-
-    /* =========================
-       Footer
-       ========================= */
-
-    .site-footer {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px;
-
-      display: flex;
-      justify-content: space-between;
-
-      border-top: 1px solid #e5e5e5;
-
-      color: #999;
-      font-size: 9px;
-      letter-spacing: 0.08em;
-    }
-
-    /* =========================
-       Tablet
-       ========================= */
-
-    @media (max-width: 900px) {
-      .entries-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+      :global(html) {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
       }
-    }
 
-    /* =========================
-       Mobile
-       ========================= */
+      :global(body) {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+        color: #111111;
+        font-family:
+          Arial,
+          Helvetica,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
 
-    @media (max-width: 560px) {
       .site-header {
-        height: 72px;
-        padding: 0 18px;
+        width: calc(100% - 80px);
+        max-width: 1440px;
+        margin: 0 auto;
+        height: 56px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        border-bottom: 1px solid #e5e5e5;
       }
 
-      .category-nav {
-        padding: 14px 18px;
-        gap: 22px;
+      .logo {
+        color: #111111;
+        text-decoration: none;
+        font-size: 14px;
+        letter-spacing: -0.02em;
       }
 
-      .recent-section {
-        padding: 48px 18px 72px;
+      .search-button {
+        border: 0;
+        background: none;
+        padding: 0;
+
+        color: #111111;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+
+        cursor: pointer;
       }
 
-      .entries-grid {
-        grid-template-columns: 1fr;
-        gap: 42px;
+      .search-panel {
+        display: none;
+
+        width: calc(100% - 80px);
+        max-width: 1440px;
+        margin: 0 auto;
+
+        border-bottom: 1px solid #e5e5e5;
       }
 
-      .entry-image {
-        aspect-ratio: 4 / 3;
-      }
-
-      .site-footer {
-        padding: 20px 18px;
+      .search-panel.open {
+        display: block;
       }
 
       .search-inner {
-        padding: 18px;
+        height: 80px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 30px;
       }
-    }
-  </style>
+
+      .search-inner input {
+        flex: 1;
+
+        border: 0;
+        outline: none;
+
+        font-size: 18px;
+        font-family: inherit;
+
+        background: transparent;
+        color: #111111;
+      }
+
+      .search-inner button {
+        border: 0;
+        background: none;
+
+        font-size: 9px;
+        letter-spacing: 0.08em;
+
+        cursor: pointer;
+      }
+
+      .site-main {
+        width: calc(100% - 80px);
+        max-width: 1440px;
+        margin: 0 auto;
+      }
+
+      .recent-section {
+        padding: 60px 0 110px;
+      }
+
+      .section-label {
+        margin-bottom: 34px;
+
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        color: #111111;
+      }
+
+      .entries {
+        display: grid;
+        grid-template-columns:
+          repeat(4, minmax(0, 1fr));
+
+        column-gap: 24px;
+        row-gap: 70px;
+      }
+
+      .entry-card {
+        min-width: 0;
+      }
+
+      .entry-link {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .entry-image {
+        width: 100%;
+        aspect-ratio: 1 / 0.78;
+
+        background: #f4f4f4;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        overflow: hidden;
+      }
+
+      .entry-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .entry-image span {
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        color: #999999;
+      }
+
+      .entry-date {
+        margin-top: 16px;
+
+        font-size: 9px;
+        letter-spacing: 0.04em;
+        color: #777777;
+      }
+
+      .entry-title {
+        margin: 8px 0 0;
+
+        font-size: 17px;
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+      }
+
+      .entry-location {
+        margin-top: 9px;
+
+        font-size: 9px;
+        letter-spacing: 0.04em;
+        color: #777777;
+      }
+
+      .entry-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        margin-top: 10px;
+      }
+
+      .tag {
+        color: #777777;
+        text-decoration: none;
+
+        font-size: 9px;
+        letter-spacing: 0.03em;
+      }
+
+      .tag:hover {
+        color: #111111;
+      }
+
+      .entry-description {
+        max-width: 340px;
+
+        margin: 13px 0 0;
+
+        color: #444444;
+
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .no-results {
+        display: none;
+
+        padding: 50px 0;
+
+        color: #777777;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+      }
+
+      .site-footer {
+        width: calc(100% - 80px);
+        max-width: 1440px;
+        margin: 0 auto;
+
+        padding: 25px 0 28px;
+
+        border-top: 1px solid #e5e5e5;
+
+        display: flex;
+        justify-content: space-between;
+
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.06em;
+      }
+
+      @media (max-width: 1000px) {
+        .entries {
+          grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 600px) {
+        .site-header,
+        .site-main,
+        .site-footer,
+        .search-panel {
+          width: calc(100% - 40px);
+        }
+
+        .entries {
+          grid-template-columns: 1fr;
+        }
+
+        .recent-section {
+          padding-top: 40px;
+        }
+      }
+    </style>
+  </body>
 </html>

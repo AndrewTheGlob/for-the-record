@@ -11,16 +11,16 @@ const entries = defineCollection({
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
-    category: z.enum([
-      "TRAVEL",
-      "FILM",
-      "FOOD",
-      "MUSIC",
-      "LIFE",
-    ]),
+
     location: z.string(),
+
     description: z.string(),
+
     cover: z.string().optional(),
+
+    tags: z.array(z.string()).default([]),
+
+    rating: z.coerce.number().min(0).max(6).default(0),
   }),
 });
 

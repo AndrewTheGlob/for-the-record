@@ -15,9 +15,18 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
+
 const { Content } = await render(entry);
 
-const { title, date, category, location, description, cover } = entry.data;
+const {
+  title,
+  date,
+  location,
+  description,
+  cover,
+  tags,
+  rating,
+} = entry.data;
 
 const formattedDate = date
   .toLocaleDateString("en-GB", {
@@ -26,12 +35,43 @@ const formattedDate = date
     year: "numeric",
   })
   .toUpperCase();
+
+const base = import.meta.env.BASE_URL;
+
+function slugifyTag(tag: string) {
+  return tag
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
+
+function withBase(path: string) {
+  if (!path) return "";
+
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://")
+  ) {
+    return path;
+  }
+
+  return `${base}${path.replace(/^\/+/, "")}`;
+}
+
+const stars =
+  "★".repeat(rating) +
+  "☆".repeat(6 - rating);
 ---
 
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
 
     <title>{title} — for the record</title>
 
@@ -42,771 +82,373 @@ const formattedDate = date
   </head>
 
   <body>
-
-    <!-- =========================
-         HEADER
-    ========================== -->
-
     <header class="site-header">
-
-      <a href="/" class="logo">
+      <a href={base} class="logo">
         for the record
       </a>
 
-      <nav>
-        <a href="/" class="back">
-          back
-        </a>
-
-        <button
-          class="search-button"
-          type="button"
-        >
-          search
-        </button>
-      </nav>
-
+      <a href={base} class="back">
+        BACK
+      </a>
     </header>
 
-
-    <!-- =========================
-         MAIN
-    ========================== -->
-
     <main>
-
-      <!-- =========================
-           ARTICLE HEADER
-      ========================== -->
-
       <section class="article-header">
-
-        <div class="meta">
-
+        <div class="article-meta">
           <span>{formattedDate}</span>
-
-          <span>{category}</span>
-
           <span>{location}</span>
-
         </div>
 
+        <h1>{title}</h1>
 
-        <h1>
-          {title}
-        </h1>
-
-
-        <p class="intro">
+        <p class="description">
           {description}
         </p>
 
+        {
+          tags && tags.length > 0 && (
+            <div class="article-tags">
+              {tags.map((tag) => (
+                <a
+                  href={`${base}tags/${slugifyTag(tag)}`}
+                >
+                  #{tag}
+                </a>
+              ))}
+            </div>
+          )
+        }
+
+        <div
+          class="rating"
+          aria-label={`Rating: ${rating} out of 6`}
+        >
+          {stars}
+        </div>
       </section>
 
-
-      <!-- =========================
-           COVER IMAGE
-      ========================== -->
-
       {
-        cover ? (
-          <div class="cover">
+        cover && (
+          <div class="article-cover">
             <img
-              src={cover}
+              src={withBase(cover)}
               alt={title}
             />
-          </div>
-        ) : (
-          <div class="cover">
-            <span>PHOTO</span>
           </div>
         )
       }
 
-
-      <!-- =========================
-           ARTICLE CONTENT
-      ========================== -->
-
       <section class="article-layout">
-
-        <aside>
-
-          <span>
-            01
-          </span>
-
-          <span>
-            {category}
-          </span>
-
+        <aside class="article-index">
+          <div>01</div>
+          <div>ARTICLE</div>
         </aside>
 
-
-        <article>
-
+        <article class="article-body">
           <Content />
-
         </article>
-
       </section>
-
-
-      <!-- =========================
-           ARTICLE INFORMATION
-      ========================== -->
-
-      <footer class="article-footer">
-
-        <div>
-
-          <span>
-            Category
-          </span>
-
-          <strong>
-            {category}
-          </strong>
-
-        </div>
-
-
-        <div>
-
-          <span>
-            Date
-          </span>
-
-          <strong>
-            {formattedDate}
-          </strong>
-
-        </div>
-
-
-        <div>
-
-          <span>
-            Location
-          </span>
-
-          <strong>
-            {location}
-          </strong>
-
-        </div>
-
-      </footer>
-
     </main>
 
-
-    <!-- =========================
-         SITE FOOTER
-    ========================== -->
-
     <footer class="site-footer">
-
-      <span>
-        for the record
-      </span>
-
-      <span>
-        © 2026
-      </span>
-
+      <span>FOR THE RECORD</span>
+      <span>© 2026</span>
     </footer>
 
+    <style>
+      :global(*) {
+        box-sizing: border-box;
+      }
 
+      :global(html) {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      :global(body) {
+        margin: 0;
+        padding: 0;
+
+        background: #ffffff;
+        color: #111111;
+
+        font-family:
+          Arial,
+          Helvetica,
+          sans-serif;
+
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .site-header {
+        width: calc(100% - 24px);
+        max-width: 1440px;
+
+        height: 45px;
+
+        margin: 0 auto;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .logo {
+        color: #111111;
+        text-decoration: none;
+
+        font-size: 14px;
+        letter-spacing: -0.02em;
+      }
+
+      .back {
+        color: #111111;
+        text-decoration: none;
+
+        font-size: 9px;
+        letter-spacing: 0.08em;
+      }
+
+      main {
+        width: 100%;
+      }
+
+      .article-header {
+        padding:
+          72px 12px
+          0;
+      }
+
+      .article-meta {
+        display: flex;
+        gap: 30px;
+
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.05em;
+      }
+
+      h1 {
+        margin:
+          30px 0
+          0;
+
+        font-size: clamp(54px, 7vw, 92px);
+        font-weight: 400;
+
+        letter-spacing: -0.055em;
+        line-height: 0.95;
+      }
+
+      .description {
+        max-width: 800px;
+
+        margin:
+          35px 0 0;
+
+        color: #333333;
+
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .article-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+
+        margin-top: 25px;
+      }
+
+      .article-tags a {
+        color: #666666;
+        text-decoration: none;
+
+        font-size: 9px;
+        letter-spacing: 0.03em;
+      }
+
+      .article-tags a:hover {
+        color: #111111;
+      }
+
+      .rating {
+        margin-top: 22px;
+
+        color: #111111;
+
+        font-size: 16px;
+        letter-spacing: 0.12em;
+        line-height: 1;
+      }
+
+      .article-cover {
+        width: calc(100% - 24px);
+        max-width: 1440px;
+
+        margin:
+          70px auto
+          0;
+
+        background: #f4f4f4;
+
+        overflow: hidden;
+      }
+
+      .article-cover img {
+        width: 100%;
+        height: auto;
+
+        display: block;
+      }
+
+      .article-layout {
+        display: grid;
+
+        grid-template-columns:
+          220px
+          minmax(0, 680px);
+
+        column-gap: 54px;
+
+        margin:
+          90px auto
+          0;
+
+        width: calc(100% - 24px);
+        max-width: 1000px;
+      }
+
+      .article-index {
+        padding-top: 3px;
+
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.06em;
+        line-height: 1.8;
+      }
+
+      .article-body {
+        color: #111111;
+
+        font-size: 15px;
+        line-height: 2;
+
+        text-align: left;
+      }
+
+      .article-body :global(p) {
+        margin:
+          0 0 32px;
+      }
+
+      .article-body :global(h2) {
+        margin:
+          55px 0 25px;
+
+        font-size: 24px;
+        font-weight: 400;
+
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+      }
+
+      .article-body :global(h3) {
+        margin:
+          45px 0 20px;
+
+        font-size: 18px;
+        font-weight: 400;
+      }
+
+      .article-body :global(img) {
+        width: 100%;
+        height: auto;
+
+        display: block;
+
+        margin:
+          45px 0;
+      }
+
+      .article-body :global(a) {
+        color: inherit;
+      }
+
+      .site-footer {
+        width: calc(100% - 24px);
+        max-width: 1440px;
+
+        margin:
+          120px auto
+          0;
+
+        padding:
+          25px 0
+          28px;
+
+        border-top: 1px solid #e5e5e5;
+
+        display: flex;
+        justify-content: space-between;
+
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.06em;
+      }
+
+      @media (max-width: 800px) {
+        .article-header {
+          padding-top: 55px;
+        }
+
+        h1 {
+          font-size: 50px;
+        }
+
+        .article-layout {
+          grid-template-columns: 1fr;
+          row-gap: 35px;
+        }
+
+        .article-index {
+          padding-top: 0;
+        }
+
+        .article-body {
+          font-size: 14px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .site-header {
+          width: calc(100% - 40px);
+        }
+
+        .article-header {
+          padding:
+            50px 20px
+            0;
+        }
+
+        .article-cover {
+          width: calc(100% - 40px);
+        }
+
+        .article-layout {
+          width: calc(100% - 40px);
+        }
+
+        h1 {
+          font-size: 42px;
+        }
+      }
+    </style>
   </body>
 </html>
-
-
-<style>
-
-  /* =================================
-     RESET
-  ================================= */
-
-  :global(*) {
-    box-sizing: border-box;
-  }
-
-
-  :global(body) {
-
-    margin: 0;
-
-    background: #ffffff;
-
-    color: #111111;
-
-    font-family:
-      Inter,
-      "Noto Sans TC",
-      Helvetica,
-      Arial,
-      system-ui,
-      sans-serif;
-
-  }
-
-
-  :global(a) {
-
-    color: inherit;
-
-    text-decoration: none;
-
-  }
-
-
-  /* =================================
-     HEADER
-  ================================= */
-
-  .site-header {
-
-    width:
-      min(
-        1200px,
-        calc(100% - 64px)
-      );
-
-    height: 80px;
-
-    margin: 0 auto;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    border-bottom:
-      1px solid #e5e5e5;
-
-  }
-
-
-  .logo {
-
-    font-size: 15px;
-
-    font-weight: 600;
-
-    letter-spacing: -0.02em;
-
-  }
-
-
-  nav {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 28px;
-
-    font-size: 12px;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.08em;
-
-  }
-
-
-  nav a,
-  .search-button {
-
-    color: #6f6f6f;
-
-  }
-
-
-  nav a:hover,
-  .search-button:hover {
-
-    color: #111111;
-
-  }
-
-
-  .search-button {
-
-    border: 0;
-
-    background: transparent;
-
-    padding: 0;
-
-    font: inherit;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.08em;
-
-    cursor: pointer;
-
-  }
-
-
-  /* =================================
-     MAIN
-  ================================= */
-
-  main {
-
-    width:
-      min(
-        1200px,
-        calc(100% - 64px)
-      );
-
-    margin: 0 auto;
-
-  }
-
-
-  /* =================================
-     ARTICLE HEADER
-  ================================= */
-
-  .article-header {
-
-    width: 100%;
-
-    margin:
-      110px
-      0
-      70px;
-
-  }
-
-
-  .meta {
-
-    display: flex;
-
-    flex-wrap: wrap;
-
-    gap: 24px;
-
-    margin-bottom: 28px;
-
-    color: #6f6f6f;
-
-    font-size: 11px;
-
-    letter-spacing: 0.08em;
-
-    text-transform: uppercase;
-
-  }
-
-
-  h1 {
-
-    max-width: 1100px;
-
-    margin: 0;
-
-    font-size:
-      clamp(
-        44px,
-        6vw,
-        78px
-      );
-
-    line-height: 0.98;
-
-    font-weight: 500;
-
-    letter-spacing: -0.055em;
-
-  }
-
-
-  .intro {
-
-    max-width: 620px;
-
-    margin:
-      32px
-      0
-      0;
-
-    color: #6f6f6f;
-
-    font-size: 17px;
-
-    line-height: 1.8;
-
-  }
-
-
-  /* =================================
-     COVER
-  ================================= */
-
-  .cover {
-
-    width: 100%;
-
-    aspect-ratio: 16 / 9;
-
-    background: #f3f3f3;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    overflow: hidden;
-
-  }
-
-
-  .cover span {
-
-    color: #aaaaaa;
-
-    font-size: 11px;
-
-    letter-spacing: 0.1em;
-
-  }
-
-
-  .cover img {
-
-    width: 100%;
-
-    height: 100%;
-
-    object-fit: cover;
-
-    display: block;
-
-  }
-
-
-  /* =================================
-     ARTICLE CONTENT
-  ================================= */
-
-  .article-layout {
-
-    display: grid;
-
-    grid-template-columns:
-      120px
-      minmax(0, 680px);
-
-    gap: 40px;
-
-    justify-content: start;
-
-    margin:
-      100px
-      0;
-
-  }
-
-
-  /* =================================
-     ARTICLE SIDE LABEL
-  ================================= */
-
-  aside {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 8px;
-
-    color: #999999;
-
-    font-size: 10px;
-
-    letter-spacing: 0.08em;
-
-    text-transform: uppercase;
-
-  }
-
-
-  /* =================================
-     ARTICLE BODY
-  ================================= */
-
-  article {
-
-    width: 100%;
-
-    font-size: 16px;
-
-    line-height: 2;
-
-  }
-
-
-  article :global(p) {
-
-    margin:
-      0
-      0
-      28px;
-
-  }
-
-
-  article :global(h2) {
-
-    margin:
-      72px
-      0
-      24px;
-
-    font-size: 28px;
-
-    line-height: 1.2;
-
-    font-weight: 500;
-
-    letter-spacing: -0.03em;
-
-  }
-
-
-  article :global(h3) {
-
-    margin:
-      56px
-      0
-      20px;
-
-    font-size: 20px;
-
-    font-weight: 500;
-
-  }
-
-
-  article :global(img) {
-
-    display: block;
-
-    width: 100%;
-
-    height: auto;
-
-    margin:
-      48px
-      0;
-
-  }
-
-
-  /* =================================
-     ARTICLE FOOTER
-  ================================= */
-
-  .article-footer {
-
-    border-top:
-      1px solid #e5e5e5;
-
-    border-bottom:
-      1px solid #e5e5e5;
-
-    display: grid;
-
-    grid-template-columns:
-      repeat(
-        3,
-        1fr
-      );
-
-    padding:
-      24px
-      0;
-
-  }
-
-
-  .article-footer div {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 8px;
-
-  }
-
-
-  .article-footer span {
-
-    color: #999999;
-
-    font-size: 10px;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.08em;
-
-  }
-
-
-  .article-footer strong {
-
-    font-size: 12px;
-
-    font-weight: 500;
-
-  }
-
-
-  /* =================================
-     SITE FOOTER
-  ================================= */
-
-  .site-footer {
-
-    width:
-      min(
-        1200px,
-        calc(100% - 64px)
-      );
-
-    margin:
-      80px
-      auto
-      0;
-
-    padding:
-      24px
-      0
-      40px;
-
-    display: flex;
-
-    justify-content: space-between;
-
-    border-top:
-      1px solid #e5e5e5;
-
-    color: #999999;
-
-    font-size: 11px;
-
-  }
-
-
-  /* =================================
-     MOBILE
-  ================================= */
-
-  @media (max-width: 700px) {
-
-    .site-header,
-    main,
-    .site-footer {
-
-      width:
-        calc(100% - 40px);
-
-    }
-
-
-    .site-header {
-
-      height: 68px;
-
-    }
-
-
-    nav {
-
-      gap: 16px;
-
-    }
-
-
-    .article-header {
-
-      margin:
-        72px
-        0
-        48px;
-
-    }
-
-
-    h1 {
-
-      font-size: 46px;
-
-    }
-
-
-    .intro {
-
-      font-size: 15px;
-
-    }
-
-
-    .article-layout {
-
-      display: block;
-
-      margin:
-        64px
-        0;
-
-    }
-
-
-    aside {
-
-      margin-bottom: 32px;
-
-      flex-direction: row;
-
-      gap: 16px;
-
-    }
-
-
-    article {
-
-      font-size: 15px;
-
-      line-height: 1.9;
-
-    }
-
-
-    .article-footer {
-
-      grid-template-columns: 1fr;
-
-      gap: 20px;
-
-    }
-
-
-    .site-footer {
-
-      margin-top: 60px;
-
-    }
-
-  }
-
-</style>

@@ -1,0 +1,411 @@
+---
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("entries");
+
+  const tagMap = new Map();
+
+  for (const entry of entries) {
+    for (const tag of entry.data.tags || []) {
+      const key = tag.toLowerCase();
+
+      if (!tagMap.has(key)) {
+        tagMap.set(key, tag);
+      }
+    }
+  }
+
+  return Array.from(tagMap.entries()).map(
+    ([slug, originalTag]) => ({
+      params: {
+        tag: slug,
+      },
+
+      props: {
+        tag: originalTag,
+        entries: entries.filter((entry) =>
+          (entry.data.tags || []).some(
+            (entryTag) =>
+              entryTag.toLowerCase() === slug
+          )
+        ),
+      },
+    })
+  );
+}
+
+const { tag, entries } = Astro.props;
+
+const base = import.meta.env.BASE_URL;
+
+const sortedEntries = entries.sort(
+  (a, b) =>
+    b.data.date.getTime() -
+    a.data.date.getTime()
+);
+
+function formatDate(date: Date) {
+  return date
+    .toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    .toUpperCase();
+}
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>
+      #{tag} — for the record
+    </title>
+  </head>
+
+  <body>
+    <header class="site-header">
+      <a href={base} class="logo">
+        for the record
+      </a>
+
+      <a href={base} class="back">
+        BACK
+      </a>
+    </header>
+
+    <main>
+      <section class="tag-header">
+        <div class="small-label">
+          TAG
+        </div>
+
+        <h1>#{tag}</h1>
+
+        <div class="count">
+          {sortedEntries.length}
+          {sortedEntries.length === 1
+            ? " ENTRY"
+            : " ENTRIES"}
+        </div>
+      </section>
+
+      <section class="entries">
+        {
+          sortedEntries.map((entry) => (
+            <article class="entry-card">
+              <a
+                href={`${base}journal/${entry.id}`}
+                class="entry-link"
+              >
+                <div class="entry-image">
+                  {
+                    entry.data.cover ? (
+                      <img
+                        src={entry.data.cover}
+                        alt={entry.data.title}
+                      />
+                    ) : (
+                      <span>PHOTO</span>
+                    )
+                  }
+                </div>
+
+                <div class="entry-date">
+                  {formatDate(entry.data.date)}
+                </div>
+
+                <h2>
+                  {entry.data.title}
+                </h2>
+
+                <div class="location">
+                  {entry.data.location}
+                </div>
+              </a>
+
+              {
+                entry.data.tags &&
+                  entry.data.tags.length > 0 && (
+                    <div class="entry-tags">
+                      {entry.data.tags.map(
+                        (entryTag) => (
+                          <a
+                            href={`${base}tags/${encodeURIComponent(
+                              entryTag.toLowerCase()
+                            )}`}
+                          >
+                            #{entryTag}
+                          </a>
+                        )
+                      )}
+                    </div>
+                  )
+              }
+
+              <p>
+                {entry.data.description}
+              </p>
+            </article>
+          ))
+        }
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>FOR THE RECORD</span>
+      <span>© 2026</span>
+    </footer>
+
+    <style>
+      :global(*) {
+        box-sizing: border-box;
+      }
+
+      :global(body) {
+        margin: 0;
+        background: #ffffff;
+        color: #111111;
+
+        font-family:
+          Arial,
+          Helvetica,
+          sans-serif;
+
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .site-header {
+        width: calc(100% - 80px);
+        max-width: 1440px;
+
+        height: 56px;
+
+        margin: 0 auto;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .logo {
+        color: #111111;
+        text-decoration: none;
+
+        font-size: 14px;
+      }
+
+      .back {
+        color: #111111;
+        text-decoration: none;
+
+        font-size: 9px;
+        letter-spacing: 0.08em;
+      }
+
+      .tag-header {
+        width: calc(100% - 80px);
+        max-width: 1440px;
+
+        margin: 0 auto;
+
+        padding:
+          75px 0
+          50px;
+
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .small-label {
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.08em;
+      }
+
+      h1 {
+        margin:
+          20px 0
+          10px;
+
+        font-size: 56px;
+        font-weight: 400;
+
+        letter-spacing: -0.04em;
+      }
+
+      .count {
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.06em;
+      }
+
+      .entries {
+        width: calc(100% - 80px);
+        max-width: 1440px;
+
+        margin: 0 auto;
+
+        padding:
+          55px 0
+          110px;
+
+        display: grid;
+
+        grid-template-columns:
+          repeat(4, minmax(0, 1fr));
+
+        gap: 65px 24px;
+      }
+
+      .entry-card {
+        min-width: 0;
+      }
+
+      .entry-link {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .entry-image {
+        width: 100%;
+        aspect-ratio: 1 / 0.78;
+
+        background: #f4f4f4;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        overflow: hidden;
+      }
+
+      .entry-image img {
+        width: 100%;
+        height: 100%;
+
+        object-fit: cover;
+      }
+
+      .entry-image span {
+        color: #999999;
+
+        font-size: 9px;
+        letter-spacing: 0.08em;
+      }
+
+      .entry-date {
+        margin-top: 16px;
+
+        color: #777777;
+
+        font-size: 9px;
+      }
+
+      h2 {
+        margin:
+          8px 0 0;
+
+        font-size: 17px;
+        font-weight: 400;
+
+        letter-spacing: -0.02em;
+      }
+
+      .location {
+        margin-top: 9px;
+
+        color: #777777;
+
+        font-size: 9px;
+      }
+
+      .entry-tags {
+        display: flex;
+        flex-wrap: wrap;
+
+        gap: 8px;
+
+        margin-top: 10px;
+      }
+
+      .entry-tags a {
+        color: #777777;
+        text-decoration: none;
+
+        font-size: 9px;
+      }
+
+      .entry-tags a:hover {
+        color: #111111;
+      }
+
+      p {
+        max-width: 340px;
+
+        margin:
+          13px 0 0;
+
+        color: #444444;
+
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .site-footer {
+        width: calc(100% - 80px);
+        max-width: 1440px;
+
+        margin: 0 auto;
+
+        padding:
+          25px 0
+          28px;
+
+        border-top: 1px solid #e5e5e5;
+
+        display: flex;
+        justify-content: space-between;
+
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.06em;
+      }
+
+      @media (max-width: 1000px) {
+        .entries {
+          grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 600px) {
+        .site-header,
+        .tag-header,
+        .entries,
+        .site-footer {
+          width: calc(100% - 40px);
+        }
+
+        .entries {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 44px;
+        }
+      }
+    </style>
+  </body>
+</html>
