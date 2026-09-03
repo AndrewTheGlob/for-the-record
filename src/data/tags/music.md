@@ -1,3 +1,3 @@
 ---
-name: Summer Sonic
+name: MUSIC
 ---
