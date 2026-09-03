@@ -53,15 +53,10 @@ content:
 
       - name: tags
         label: Tags
-        type: reference
+        type: string
         required: false
-        options:
-          collection: tags
-          multiple: true
-          search: "name"
-          value: "{primary}"
-          label: "{primary}"
-
+        list:true
+        
       - name: location
         label: Location
         type: string
