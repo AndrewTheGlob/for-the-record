@@ -51,7 +51,7 @@ content:
         options:
           format: yyyy-MM-dd
 
-      - name: keywords
+      - name: tags
         label: Tags
         type: string
         required: false
