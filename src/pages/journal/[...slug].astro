@@ -93,8 +93,13 @@ const stars =
     </header>
 
     <main>
-      <!-- ARTICLE HEADER -->
+
+      <!-- =========================
+           ARTICLE HEADER
+      ========================= -->
+
       <section class="article-header">
+
         <div class="article-meta">
           <span>{formattedDate}</span>
           <span>{location}</span>
@@ -126,9 +131,14 @@ const stars =
         >
           {stars}
         </div>
+
       </section>
 
-      <!-- ARTICLE COVER -->
+
+      <!-- =========================
+           ARTICLE COVER
+      ========================= -->
+
       {
         cover && (
           <div class="article-cover">
@@ -140,25 +150,34 @@ const stars =
         )
       }
 
-      <!-- ARTICLE CONTENT -->
-      <section class="article-layout">
-        <aside class="article-index">
-          <div>01</div>
-          <div>ARTICLE</div>
-        </aside>
 
-        <article class="article-body">
-          <Content />
-        </article>
-      </section>
+      <!-- =========================
+           ARTICLE CONTENT
+      ========================= -->
+
+      <article class="article-body">
+        <Content />
+      </article>
+
     </main>
+
+
+    <!-- =========================
+         FOOTER
+    ========================= -->
 
     <footer class="site-footer">
       <span>FOR THE RECORD</span>
       <span>© 2026</span>
     </footer>
 
+
     <style>
+
+      /* =========================
+         GLOBAL
+      ========================= */
+
       :global(*) {
         box-sizing: border-box;
       }
@@ -183,6 +202,7 @@ const stars =
 
         -webkit-font-smoothing: antialiased;
       }
+
 
       /* =========================
          HEADER
@@ -219,9 +239,15 @@ const stars =
         letter-spacing: 0.08em;
       }
 
+
+      /* =========================
+         MAIN
+      ========================= */
+
       main {
         width: 100%;
       }
+
 
       /* =========================
          ARTICLE HEADER
@@ -233,9 +259,7 @@ const stars =
 
         margin: 0 auto;
 
-        padding:
-          72px 0
-          0;
+        padding-top: 72px;
       }
 
       .article-meta {
@@ -249,9 +273,7 @@ const stars =
       }
 
       h1 {
-        margin:
-          30px 0
-          0;
+        margin: 30px 0 0;
 
         font-size: clamp(54px, 7vw, 92px);
         font-weight: 400;
@@ -263,8 +285,7 @@ const stars =
       .description {
         max-width: 800px;
 
-        margin:
-          35px 0 0;
+        margin: 35px 0 0;
 
         color: #333333;
 
@@ -302,17 +323,16 @@ const stars =
         line-height: 1;
       }
 
+
       /* =========================
          ARTICLE COVER
       ========================= */
 
       .article-cover {
         width: calc(100% - 24px);
-        max-width: 860px;
+        max-width: 760px;
 
-        margin:
-          70px auto
-          0;
+        margin: 70px 12px 0;
 
         aspect-ratio: 16 / 9;
 
@@ -331,42 +351,17 @@ const stars =
         object-position: center;
       }
 
-      /* =========================
-         ARTICLE LAYOUT
-      ========================= */
-
-      .article-layout {
-        display: grid;
-
-        grid-template-columns:
-          220px
-          minmax(0, 680px);
-
-        column-gap: 54px;
-
-        margin:
-          90px auto
-          0;
-
-        width: calc(100% - 24px);
-        max-width: 1000px;
-      }
-
-      .article-index {
-        padding-top: 3px;
-
-        color: #777777;
-
-        font-size: 9px;
-        letter-spacing: 0.06em;
-        line-height: 1.8;
-      }
 
       /* =========================
          ARTICLE BODY
       ========================= */
 
       .article-body {
+        width: calc(100% - 24px);
+        max-width: 680px;
+
+        margin: 70px 12px 0;
+
         color: #111111;
 
         font-size: 15px;
@@ -376,13 +371,11 @@ const stars =
       }
 
       .article-body :global(p) {
-        margin:
-          0 0 32px;
+        margin: 0 0 32px;
       }
 
       .article-body :global(h2) {
-        margin:
-          55px 0 25px;
+        margin: 55px 0 25px;
 
         font-size: 24px;
         font-weight: 400;
@@ -392,12 +385,12 @@ const stars =
       }
 
       .article-body :global(h3) {
-        margin:
-          45px 0 20px;
+        margin: 45px 0 20px;
 
         font-size: 18px;
         font-weight: 400;
       }
+
 
       /* =========================
          ARTICLE BODY IMAGES
@@ -405,13 +398,14 @@ const stars =
 
       .article-body :global(img) {
         width: 100%;
-        max-width: 500px;
+        max-width: 680px;
         height: auto;
 
         display: block;
 
-        margin:
-          45px auto;
+        margin: 50px 0;
+
+        object-fit: cover;
 
         background: #f4f4f4;
       }
@@ -419,6 +413,7 @@ const stars =
       .article-body :global(a) {
         color: inherit;
       }
+
 
       /* =========================
          FOOTER
@@ -428,13 +423,9 @@ const stars =
         width: calc(100% - 24px);
         max-width: 1440px;
 
-        margin:
-          120px auto
-          0;
+        margin: 120px auto 0;
 
-        padding:
-          25px 0
-          28px;
+        padding: 25px 0 28px;
 
         border-top: 1px solid #e5e5e5;
 
@@ -447,11 +438,13 @@ const stars =
         letter-spacing: 0.06em;
       }
 
+
       /* =========================
          TABLET
       ========================= */
 
       @media (max-width: 800px) {
+
         .article-header {
           padding-top: 55px;
         }
@@ -460,64 +453,72 @@ const stars =
           font-size: 50px;
         }
 
-        .article-layout {
-          grid-template-columns: 1fr;
-
-          row-gap: 35px;
-        }
-
-        .article-index {
-          padding-top: 0;
+        .article-cover {
+          max-width: 680px;
         }
 
         .article-body {
           font-size: 14px;
         }
 
-        .article-body :global(img) {
-          max-width: 500px;
-        }
       }
+
 
       /* =========================
          MOBILE
       ========================= */
 
       @media (max-width: 600px) {
+
         .site-header {
           width: calc(100% - 40px);
         }
 
         .article-header {
-          padding:
-            50px 20px
-            0;
+          width: calc(100% - 40px);
+
+          padding-top: 50px;
         }
 
         .article-cover {
           width: calc(100% - 40px);
+          max-width: none;
+
+          margin:
+            55px 20px
+            0;
 
           aspect-ratio: 4 / 3;
-
-          margin-top: 55px;
         }
 
-        .article-layout {
+        .article-body {
           width: calc(100% - 40px);
-        }
+          max-width: none;
 
-        h1 {
-          font-size: 42px;
+          margin:
+            55px 20px
+            0;
+
+          font-size: 14px;
         }
 
         .article-body :global(img) {
           width: 100%;
           max-width: none;
 
-          margin:
-            35px 0;
+          margin: 35px 0;
         }
+
+        h1 {
+          font-size: 42px;
+        }
+
+        .site-footer {
+          width: calc(100% - 40px);
+        }
+
       }
+
     </style>
   </body>
 </html>
