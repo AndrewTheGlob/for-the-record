@@ -1,7 +1,22 @@
 ---
 import { getCollection } from "astro:content";
 
-const contentEntries = await getCollection("entries");
+const entries = await getCollection("entries");
+
+const base = import.meta.env.BASE_URL;
+
+function withBase(path: string | undefined) {
+  if (!path) return "";
+
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://")
+  ) {
+    return path;
+  }
+
+  return `${base}${path.replace(/^\/+/, "")}`;
+}
 
 function slugifyTag(tag: string) {
   return tag
@@ -11,225 +26,233 @@ function slugifyTag(tag: string) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-const entries = contentEntries
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-  .map((entry) => ({
-    id: entry.id,
-    date: entry.data.date
-      .toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-      .toUpperCase(),
-    title: entry.data.title,
-    location: entry.data.location,
-    description: entry.data.description,
-    cover: entry.data.cover || "",
-    tags: entry.data.tags || [],
-  }));
-
-const base = import.meta.env.BASE_URL;
+const sortedEntries = [...entries].sort(
+  (a, b) =>
+    b.data.date.getTime() -
+    a.data.date.getTime()
+);
 ---
 
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0"
     />
+
     <title>for the record</title>
+
     <meta
       name="description"
-      content="Personal records of places, music, films, food, and life."
+      content="A personal archive."
     />
   </head>
 
   <body>
-    <header class="site-header">
-      <a href={base} class="logo">for the record</a>
 
-      <button class="search-button" id="searchButton">
-        SEARCH
-      </button>
+    <header class="site-header">
+
+      <a
+        href={base}
+        class="logo"
+      >
+        for the record
+      </a>
+
+      <div class="header-right">
+        <span>
+          {sortedEntries.length}
+          {sortedEntries.length === 1
+            ? " ENTRY"
+            : " ENTRIES"}
+        </span>
+      </div>
+
     </header>
 
-    <div class="search-panel" id="searchPanel">
-      <div class="search-inner">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="Search..."
-          autocomplete="off"
-        />
 
-        <button id="closeSearch">CLOSE</button>
-      </div>
-    </div>
+    <main>
 
-    <main class="site-main">
-      <section class="recent-section">
-        <div class="section-label">RECENT</div>
+      <section class="intro">
 
-        <div class="entries" id="entries">
-          {
-            entries.map((entry) => (
-              <article
-                class="entry-card"
-                data-title={entry.title.toLowerCase()}
-                data-description={entry.description.toLowerCase()}
-                data-tags={entry.tags.join(" ").toLowerCase()}
-              >
+        <div class="intro-label">
+          PERSONAL ARCHIVE
+        </div>
+
+        <h1>
+          for the record
+        </h1>
+
+      </section>
+
+
+      <section class="entries">
+
+        {
+          sortedEntries.map((entry, index) => {
+
+            const {
+              title,
+              date,
+              location,
+              description,
+              cover,
+              tags,
+              rating,
+            } = entry.data;
+
+            const formattedDate =
+              date
+                .toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+                .toUpperCase();
+
+            const stars =
+              "★".repeat(
+                Math.max(
+                  0,
+                  Math.min(6, Number(rating) || 0)
+                )
+              ) +
+              "☆".repeat(
+                6 -
+                  Math.max(
+                    0,
+                    Math.min(6, Number(rating) || 0)
+                  )
+              );
+
+            return (
+              <article class="entry">
+
                 <a
-                  href={`${base}journal/${entry.id}`}
+                  href={`${base}journal/${entry.id}/`}
                   class="entry-link"
                 >
+
+                  <div class="entry-number">
+                    {String(index + 1).padStart(2, "0")}
+                  </div>
+
+
                   <div class="entry-image">
-                    {entry.cover ? (
-                      <img
-                        src={entry.cover}
-                        alt={entry.title}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span>PHOTO</span>
-                    )}
+
+                    {
+                      cover ? (
+                        <img
+                          src={withBase(cover)}
+                          alt={title}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span>
+                          PHOTO
+                        </span>
+                      )
+                    }
+
                   </div>
 
-                  <div class="entry-date">
-                    {entry.date}
+
+                  <div class="entry-info">
+
+                    <div class="entry-meta">
+
+                      <span>
+                        {formattedDate}
+                      </span>
+
+                      {
+                        location && (
+                          <span>
+                            {location}
+                          </span>
+                        )
+                      }
+
+                    </div>
+
+
+                    <h2>
+                      {title}
+                    </h2>
+
+
+                    {
+                      description && (
+                        <p>
+                          {description}
+                        </p>
+                      )
+                    }
+
+
+                    {
+                      tags &&
+                      tags.length > 0 && (
+                        <div class="entry-tags">
+
+                          {
+                            tags.map((tag) => (
+                              <span
+                                class="tag"
+                                onclick={`window.location.href='${base}tags/${slugifyTag(tag)}/'`}
+                              >
+                                #{tag}
+                              </span>
+                            ))
+                          }
+
+                        </div>
+                      )
+                    }
+
+
+                    <div
+                      class="entry-rating"
+                      aria-label={`Rating: ${rating} out of 6`}
+                    >
+                      {stars}
+                    </div>
+
                   </div>
 
-                  <h2 class="entry-title">
-                    {entry.title}
-                  </h2>
-
-                  <div class="entry-location">
-                    {entry.location}
-                  </div>
                 </a>
 
-                {
-                  entry.tags.length > 0 && (
-                    <div class="entry-tags">
-                      {entry.tags.map((tag) => (
-                        <a
-                          href={`${base}tags/${slugifyTag(tag)}`}
-                          class="tag"
-                        >
-                          #{tag}
-                        </a>
-                      ))}
-                    </div>
-                  )
-                }
-
-                <p class="entry-description">
-                  {entry.description}
-                </p>
               </article>
-            ))
-          }
-        </div>
+            );
+          })
+        }
 
-        <div class="no-results" id="noResults">
-          NO RESULTS
-        </div>
       </section>
+
     </main>
 
+
     <footer class="site-footer">
-      <span>FOR THE RECORD</span>
-      <span>© 2026</span>
+
+      <span>
+        FOR THE RECORD
+      </span>
+
+      <span>
+        © 2026
+      </span>
+
     </footer>
 
-    <script>
-      const searchButton =
-        document.getElementById("searchButton");
-
-      const searchPanel =
-        document.getElementById("searchPanel");
-
-      const searchInput =
-        document.getElementById("searchInput");
-
-      const closeSearch =
-        document.getElementById("closeSearch");
-
-      const cards =
-        Array.from(document.querySelectorAll(".entry-card"));
-
-      const noResults =
-        document.getElementById("noResults");
-
-      searchButton?.addEventListener("click", () => {
-        searchPanel?.classList.add("open");
-        searchInput?.focus();
-      });
-
-      closeSearch?.addEventListener("click", () => {
-        searchPanel?.classList.remove("open");
-
-        if (searchInput) {
-          searchInput.value = "";
-        }
-
-        cards.forEach((card) => {
-          card.style.display = "";
-        });
-
-        if (noResults) {
-          noResults.style.display = "none";
-        }
-      });
-
-      searchInput?.addEventListener("input", () => {
-        const query =
-          searchInput.value.trim().toLowerCase();
-
-        let visibleCount = 0;
-
-        cards.forEach((card) => {
-          const title =
-            card.getAttribute("data-title") || "";
-
-          const description =
-            card.getAttribute("data-description") || "";
-
-          const tags =
-            card.getAttribute("data-tags") || "";
-
-          const matches =
-            !query ||
-            title.includes(query) ||
-            description.includes(query) ||
-            tags.includes(query);
-
-          card.style.display = matches ? "" : "block";
-
-          if (matches) {
-            visibleCount++;
-          }
-        });
-
-        if (noResults) {
-          noResults.style.display =
-            visibleCount === 0 ? "block" : "none";
-        }
-      });
-
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          searchPanel?.classList.remove("open");
-        }
-      });
-    </script>
 
     <style>
+
       :global(*) {
         box-sizing: border-box;
       }
+
 
       :global(html) {
         margin: 0;
@@ -237,23 +260,30 @@ const base = import.meta.env.BASE_URL;
         background: #ffffff;
       }
 
+
       :global(body) {
         margin: 0;
         padding: 0;
+
         background: #ffffff;
         color: #111111;
+
         font-family:
           Arial,
           Helvetica,
           sans-serif;
+
         -webkit-font-smoothing: antialiased;
       }
 
+
       .site-header {
-        width: calc(100% - 80px);
+        width: calc(100% - 24px);
         max-width: 1440px;
+
+        height: 45px;
+
         margin: 0 auto;
-        height: 56px;
 
         display: flex;
         align-items: center;
@@ -261,242 +291,324 @@ const base = import.meta.env.BASE_URL;
 
         border-bottom: 1px solid #e5e5e5;
       }
+
 
       .logo {
         color: #111111;
         text-decoration: none;
+
         font-size: 14px;
         letter-spacing: -0.02em;
       }
 
-      .search-button {
-        border: 0;
-        background: none;
-        padding: 0;
 
-        color: #111111;
-        font-size: 10px;
-        letter-spacing: 0.08em;
-
-        cursor: pointer;
-      }
-
-      .search-panel {
-        display: none;
-
-        width: calc(100% - 80px);
-        max-width: 1440px;
-        margin: 0 auto;
-
-        border-bottom: 1px solid #e5e5e5;
-      }
-
-      .search-panel.open {
-        display: block;
-      }
-
-      .search-inner {
-        height: 80px;
-
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 30px;
-      }
-
-      .search-inner input {
-        flex: 1;
-
-        border: 0;
-        outline: none;
-
-        font-size: 18px;
-        font-family: inherit;
-
-        background: transparent;
-        color: #111111;
-      }
-
-      .search-inner button {
-        border: 0;
-        background: none;
-
-        font-size: 9px;
-        letter-spacing: 0.08em;
-
-        cursor: pointer;
-      }
-
-      .site-main {
-        width: calc(100% - 80px);
-        max-width: 1440px;
-        margin: 0 auto;
-      }
-
-      .recent-section {
-        padding: 60px 0 110px;
-      }
-
-      .section-label {
-        margin-bottom: 34px;
-
-        font-size: 10px;
-        letter-spacing: 0.08em;
-        color: #111111;
-      }
-
-      .entries {
-        display: grid;
-        grid-template-columns:
-          repeat(4, minmax(0, 1fr));
-
-        column-gap: 24px;
-        row-gap: 70px;
-      }
-
-      .entry-card {
-        min-width: 0;
-      }
-
-      .entry-link {
-        display: block;
-        color: inherit;
-        text-decoration: none;
-      }
-
-      .entry-image {
-        width: 100%;
-        aspect-ratio: 1 / 0.78;
-
-        background: #f4f4f4;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        overflow: hidden;
-      }
-
-      .entry-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-
-      .entry-image span {
-        font-size: 9px;
-        letter-spacing: 0.08em;
-        color: #999999;
-      }
-
-      .entry-date {
-        margin-top: 16px;
-
-        font-size: 9px;
-        letter-spacing: 0.04em;
-        color: #777777;
-      }
-
-      .entry-title {
-        margin: 8px 0 0;
-
-        font-size: 17px;
-        font-weight: 400;
-        letter-spacing: -0.02em;
-        line-height: 1.3;
-      }
-
-      .entry-location {
-        margin-top: 9px;
-
-        font-size: 9px;
-        letter-spacing: 0.04em;
-        color: #777777;
-      }
-
-      .entry-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-
-        margin-top: 10px;
-      }
-
-      .tag {
-        color: #777777;
-        text-decoration: none;
-
-        font-size: 9px;
-        letter-spacing: 0.03em;
-      }
-
-      .tag:hover {
-        color: #111111;
-      }
-
-      .entry-description {
-        max-width: 340px;
-
-        margin: 13px 0 0;
-
-        color: #444444;
-
-        font-size: 12px;
-        line-height: 1.6;
-      }
-
-      .no-results {
-        display: none;
-
-        padding: 50px 0;
-
-        color: #777777;
-        font-size: 10px;
-        letter-spacing: 0.08em;
-      }
-
-      .site-footer {
-        width: calc(100% - 80px);
-        max-width: 1440px;
-        margin: 0 auto;
-
-        padding: 25px 0 28px;
-
-        border-top: 1px solid #e5e5e5;
-
-        display: flex;
-        justify-content: space-between;
-
+      .header-right {
         color: #777777;
 
         font-size: 9px;
         letter-spacing: 0.06em;
       }
 
-      @media (max-width: 1000px) {
-        .entries {
-          grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-        }
+
+      main {
+        width: 100%;
       }
+
+
+      .intro {
+        width: calc(100% - 24px);
+        max-width: 1440px;
+
+        margin: 0 auto;
+
+        padding:
+          85px 0
+          90px;
+      }
+
+
+      .intro-label {
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.08em;
+      }
+
+
+      h1 {
+        margin:
+          28px 0
+          0;
+
+        font-size: clamp(64px, 10vw, 150px);
+        font-weight: 400;
+
+        letter-spacing: -0.065em;
+        line-height: 0.88;
+      }
+
+
+      .entries {
+        width: calc(100% - 24px);
+        max-width: 1440px;
+
+        margin: 0 auto;
+      }
+
+
+      .entry {
+        border-top: 1px solid #e5e5e5;
+      }
+
+
+      .entry-link {
+        display: grid;
+
+        grid-template-columns:
+          45px
+          minmax(240px, 420px)
+          minmax(0, 1fr);
+
+        column-gap: 35px;
+
+        padding:
+          35px 0
+          40px;
+
+        color: inherit;
+        text-decoration: none;
+      }
+
+
+      .entry-number {
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.06em;
+
+        padding-top: 4px;
+      }
+
+
+      .entry-image {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+
+        background: #f4f4f4;
+
+        overflow: hidden;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        color: #999999;
+
+        font-size: 9px;
+        letter-spacing: 0.08em;
+      }
+
+
+      .entry-image img {
+        width: 100%;
+        height: 100%;
+
+        display: block;
+
+        object-fit: cover;
+      }
+
+
+      .entry-info {
+        padding-top: 2px;
+      }
+
+
+      .entry-meta {
+        display: flex;
+
+        gap: 25px;
+
+        color: #777777;
+
+        font-size: 9px;
+        letter-spacing: 0.05em;
+      }
+
+
+      h2 {
+        margin:
+          28px 0
+          0;
+
+        font-size: clamp(32px, 4vw, 60px);
+        font-weight: 400;
+
+        letter-spacing: -0.045em;
+        line-height: 0.95;
+      }
+
+
+      .entry-info p {
+        max-width: 600px;
+
+        margin:
+          25px 0
+          0;
+
+        color: #333333;
+
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+
+      .entry-tags {
+        display: flex;
+
+        flex-wrap: wrap;
+
+        gap: 8px;
+
+        margin-top: 25px;
+      }
+
+
+      .tag {
+        color: #666666;
+
+        font-size: 9px;
+
+        letter-spacing: 0.03em;
+
+        cursor: pointer;
+      }
+
+
+      .tag:hover {
+        color: #111111;
+      }
+
+
+      .entry-rating {
+        margin-top: 22px;
+
+        color: #111111;
+
+        font-size: 15px;
+
+        letter-spacing: 0.12em;
+
+        line-height: 1;
+      }
+
+
+      .site-footer {
+        width: calc(100% - 24px);
+        max-width: 1440px;
+
+        margin:
+          120px auto
+          0;
+
+        padding:
+          25px 0
+          28px;
+
+        border-top: 1px solid #e5e5e5;
+
+        display: flex;
+
+        justify-content: space-between;
+
+        color: #777777;
+
+        font-size: 9px;
+
+        letter-spacing: 0.06em;
+      }
+
+
+      @media (max-width: 900px) {
+
+        .entry-link {
+          grid-template-columns:
+            35px
+            1fr;
+
+          row-gap: 25px;
+        }
+
+
+        .entry-image {
+          grid-column: 2;
+        }
+
+
+        .entry-info {
+          grid-column: 2;
+        }
+
+      }
+
 
       @media (max-width: 600px) {
-        .site-header,
-        .site-main,
-        .site-footer,
-        .search-panel {
-          width: calc(100% - 40px);
+
+        .site-header {
+          width:
+            calc(100% - 40px);
         }
+
+
+        .intro {
+          width:
+            calc(100% - 40px);
+
+          padding:
+            60px 0
+            65px;
+        }
+
 
         .entries {
-          grid-template-columns: 1fr;
+          width:
+            calc(100% - 40px);
         }
 
-        .recent-section {
-          padding-top: 40px;
+
+        h1 {
+          font-size: 58px;
         }
+
+
+        .entry-link {
+          grid-template-columns: 30px 1fr;
+
+          column-gap: 20px;
+
+          padding:
+            25px 0
+            30px;
+        }
+
+
+        .entry-image {
+          grid-column: 2;
+        }
+
+
+        .entry-info {
+          grid-column: 2;
+        }
+
+
+        h2 {
+          font-size: 38px;
+        }
+
       }
+
     </style>
+
   </body>
 </html>
