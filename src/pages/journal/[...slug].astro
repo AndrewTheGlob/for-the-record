@@ -308,7 +308,7 @@ const stars =
 
       .article-cover {
         width: calc(100% - 24px);
-        max-width: 1440px;
+        max-width: 860px;
 
         margin:
           70px auto
@@ -404,16 +404,14 @@ const stars =
       ========================= */
 
       .article-body :global(img) {
-      width: 100%;
-      max-width: 560px;
-      height: auto;
+        width: 100%;
+        max-width: 500px;
+        height: auto;
 
-      display: block;
+        display: block;
 
-      margin: 45px auto;
-
-        object-fit: cover;
-        object-position: center;
+        margin:
+          45px auto;
 
         background: #f4f4f4;
       }
@@ -477,7 +475,7 @@ const stars =
         }
 
         .article-body :global(img) {
-          aspect-ratio: 3 / 2;
+          max-width: 500px;
         }
       }
 
@@ -513,7 +511,8 @@ const stars =
         }
 
         .article-body :global(img) {
-          aspect-ratio: 4 / 3;
+          width: 100%;
+          max-width: none;
 
           margin:
             35px 0;
