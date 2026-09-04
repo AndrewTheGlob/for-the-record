@@ -93,6 +93,7 @@ const stars =
     </header>
 
     <main>
+      <!-- ARTICLE HEADER -->
       <section class="article-header">
         <div class="article-meta">
           <span>{formattedDate}</span>
@@ -110,7 +111,7 @@ const stars =
             <div class="article-tags">
               {tags.map((tag) => (
                 <a
-                  href={`${base}/tags/${slugifyTag(tag)}/`}
+                  href={`${base}tags/${slugifyTag(tag)}/`}
                 >
                   #{tag}
                 </a>
@@ -127,6 +128,7 @@ const stars =
         </div>
       </section>
 
+      <!-- ARTICLE COVER -->
       {
         cover && (
           <div class="article-cover">
@@ -138,6 +140,7 @@ const stars =
         )
       }
 
+      <!-- ARTICLE CONTENT -->
       <section class="article-layout">
         <aside class="article-index">
           <div>01</div>
@@ -181,6 +184,10 @@ const stars =
         -webkit-font-smoothing: antialiased;
       }
 
+      /* =========================
+         HEADER
+      ========================= */
+
       .site-header {
         width: calc(100% - 24px);
         max-width: 1440px;
@@ -216,15 +223,19 @@ const stars =
         width: 100%;
       }
 
+      /* =========================
+         ARTICLE HEADER
+      ========================= */
+
       .article-header {
-      width: calc(100% - 24px);
-      max-width: 1440px;
+        width: calc(100% - 24px);
+        max-width: 1440px;
 
-      margin: 0 auto;
+        margin: 0 auto;
 
-      padding:
-        72px 0
-        0;
+        padding:
+          72px 0
+          0;
       }
 
       .article-meta {
@@ -291,6 +302,10 @@ const stars =
         line-height: 1;
       }
 
+      /* =========================
+         ARTICLE COVER
+      ========================= */
+
       .article-cover {
         width: calc(100% - 24px);
         max-width: 1440px;
@@ -299,6 +314,8 @@ const stars =
           70px auto
           0;
 
+        aspect-ratio: 16 / 9;
+
         background: #f4f4f4;
 
         overflow: hidden;
@@ -306,10 +323,17 @@ const stars =
 
       .article-cover img {
         width: 100%;
-        height: auto;
+        height: 100%;
 
         display: block;
+
+        object-fit: cover;
+        object-position: center;
       }
+
+      /* =========================
+         ARTICLE LAYOUT
+      ========================= */
 
       .article-layout {
         display: grid;
@@ -337,6 +361,10 @@ const stars =
         letter-spacing: 0.06em;
         line-height: 1.8;
       }
+
+      /* =========================
+         ARTICLE BODY
+      ========================= */
 
       .article-body {
         color: #111111;
@@ -371,19 +399,34 @@ const stars =
         font-weight: 400;
       }
 
+      /* =========================
+         ARTICLE BODY IMAGES
+      ========================= */
+
       .article-body :global(img) {
         width: 100%;
         height: auto;
+
+        aspect-ratio: 3 / 2;
 
         display: block;
 
         margin:
           45px 0;
+
+        object-fit: cover;
+        object-position: center;
+
+        background: #f4f4f4;
       }
 
       .article-body :global(a) {
         color: inherit;
       }
+
+      /* =========================
+         FOOTER
+      ========================= */
 
       .site-footer {
         width: calc(100% - 24px);
@@ -408,6 +451,10 @@ const stars =
         letter-spacing: 0.06em;
       }
 
+      /* =========================
+         TABLET
+      ========================= */
+
       @media (max-width: 800px) {
         .article-header {
           padding-top: 55px;
@@ -419,6 +466,7 @@ const stars =
 
         .article-layout {
           grid-template-columns: 1fr;
+
           row-gap: 35px;
         }
 
@@ -429,7 +477,15 @@ const stars =
         .article-body {
           font-size: 14px;
         }
+
+        .article-body :global(img) {
+          aspect-ratio: 3 / 2;
+        }
       }
+
+      /* =========================
+         MOBILE
+      ========================= */
 
       @media (max-width: 600px) {
         .site-header {
@@ -444,6 +500,10 @@ const stars =
 
         .article-cover {
           width: calc(100% - 40px);
+
+          aspect-ratio: 4 / 3;
+
+          margin-top: 55px;
         }
 
         .article-layout {
@@ -452,6 +512,13 @@ const stars =
 
         h1 {
           font-size: 42px;
+        }
+
+        .article-body :global(img) {
+          aspect-ratio: 4 / 3;
+
+          margin:
+            35px 0;
         }
       }
     </style>
