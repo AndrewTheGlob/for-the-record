@@ -3,6 +3,7 @@ title: test
 date: 2026-09-04
 tags:
   - test
+  - Tokyo
 location: test
 description: A day at Summer Sonic 2026 in Tokyo — music, people, heat, and
   everything in between.
