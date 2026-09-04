@@ -88,11 +88,17 @@ const stars =
     ========================= -->
 
     <header class="site-header">
-      <a href={base} class="logo">
+      <a
+        href={base}
+        class="logo"
+      >
         for the record
       </a>
 
-      <a href={base} class="back">
+      <a
+        href={base}
+        class="back"
+      >
         BACK
       </a>
     </header>
@@ -113,11 +119,15 @@ const stars =
         <section class="article-header">
 
           <div class="article-meta">
-            <span>{formattedDate}</span>
+            <span>
+              {formattedDate}
+            </span>
 
             {
               location && (
-                <span>{location}</span>
+                <span>
+                  {location}
+                </span>
               )
             }
           </div>
@@ -137,7 +147,6 @@ const stars =
           {
             tags && tags.length > 0 && (
               <div class="article-tags">
-
                 {
                   tags.map((tag) => (
                     <a
@@ -147,7 +156,6 @@ const stars =
                     </a>
                   ))
                 }
-
               </div>
             )
           }
@@ -168,14 +176,17 @@ const stars =
 
         {
           cover && (
-            <div class="article-cover">
-
+            <button
+              class="article-cover"
+              id="coverButton"
+              type="button"
+              aria-label="Open full-size image"
+            >
               <img
                 src={withBase(cover)}
                 alt={title}
               />
-
-            </div>
+            </button>
           )
         }
 
@@ -194,6 +205,47 @@ const stars =
 
 
     <!-- =========================
+         IMAGE LIGHTBOX
+    ========================= -->
+
+    {
+      cover && (
+        <div
+          class="lightbox"
+          id="coverLightbox"
+          aria-hidden="true"
+        >
+          <button
+            class="lightbox-backdrop"
+            id="lightboxBackdrop"
+            type="button"
+            aria-label="Close image"
+          >
+          </button>
+
+          <div class="lightbox-content">
+
+            <button
+              class="lightbox-close"
+              id="lightboxClose"
+              type="button"
+            >
+              CLOSE
+            </button>
+
+            <img
+              src={withBase(cover)}
+              alt={title}
+              class="lightbox-image"
+            />
+
+          </div>
+        </div>
+      )
+    }
+
+
+    <!-- =========================
          FOOTER
     ========================= -->
 
@@ -206,6 +258,75 @@ const stars =
         © 2026
       </span>
     </footer>
+
+
+    <script>
+      const coverButton =
+        document.getElementById("coverButton");
+
+      const lightbox =
+        document.getElementById("coverLightbox");
+
+      const lightboxClose =
+        document.getElementById("lightboxClose");
+
+      const lightboxBackdrop =
+        document.getElementById(
+          "lightboxBackdrop"
+        );
+
+      function openLightbox() {
+        if (!lightbox) return;
+
+        lightbox.classList.add("open");
+        lightbox.setAttribute(
+          "aria-hidden",
+          "false"
+        );
+
+        document.body.classList.add(
+          "lightbox-open"
+        );
+      }
+
+      function closeLightbox() {
+        if (!lightbox) return;
+
+        lightbox.classList.remove("open");
+        lightbox.setAttribute(
+          "aria-hidden",
+          "true"
+        );
+
+        document.body.classList.remove(
+          "lightbox-open"
+        );
+      }
+
+      coverButton?.addEventListener(
+        "click",
+        openLightbox
+      );
+
+      lightboxClose?.addEventListener(
+        "click",
+        closeLightbox
+      );
+
+      lightboxBackdrop?.addEventListener(
+        "click",
+        closeLightbox
+      );
+
+      document.addEventListener(
+        "keydown",
+        (event) => {
+          if (event.key === "Escape") {
+            closeLightbox();
+          }
+        }
+      );
+    </script>
 
 
     <style>
@@ -240,12 +361,20 @@ const stars =
         -webkit-font-smoothing: antialiased;
       }
 
+      :global(body.lightbox-open) {
+        overflow: hidden;
+      }
+
 
       /* =========================
          HEADER
       ========================= */
 
       .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+
         width: calc(100% - 24px);
         max-width: 1440px;
 
@@ -258,6 +387,8 @@ const stars =
         justify-content: space-between;
 
         border-bottom: 1px solid #e5e5e5;
+
+        background: #ffffff;
       }
 
       .logo {
@@ -283,14 +414,11 @@ const stars =
 
       /* =========================
          ARTICLE CONTAINER
-         =========================
-
-         與 Header 完全共用同一條
-         左右基準線。
-      */
+      ========================= */
 
       .article-container {
         width: calc(100% - 24px);
+
         max-width: 1440px;
 
         margin: 0 auto;
@@ -405,24 +533,32 @@ const stars =
 
       /* =========================
          ARTICLE COVER
-      =========================
-
-         圖片與標題共用左邊基準線。
-         圖片比正文稍寬。
-      */
+      ========================= */
 
       .article-cover {
         width: 100%;
 
-        max-width: 820px;
+        max-width: 680px;
 
-        margin-top: 65px;
+        margin:
+          60px 0
+          0;
+
+        padding: 0;
+
+        border: 0;
+
+        appearance: none;
+
+        display: block;
 
         aspect-ratio: 16 / 9;
 
         background: #f4f4f4;
 
         overflow: hidden;
+
+        cursor: zoom-in;
       }
 
       .article-cover img {
@@ -459,7 +595,8 @@ const stars =
 
       .article-body :global(p) {
         margin:
-          0 0 32px;
+          0 0
+          32px;
       }
 
       .article-body :global(h2) {
@@ -510,11 +647,109 @@ const stars =
 
 
       /* =========================
+         LIGHTBOX
+      ========================= */
+
+      .lightbox {
+        position: fixed;
+
+        inset: 0;
+
+        z-index: 1000;
+
+        display: none;
+
+        align-items: center;
+        justify-content: center;
+
+        padding: 40px;
+
+        background: rgba(
+          255,
+          255,
+          255,
+          0.96
+        );
+      }
+
+      .lightbox.open {
+        display: flex;
+      }
+
+      .lightbox-backdrop {
+        position: absolute;
+
+        inset: 0;
+
+        width: 100%;
+        height: 100%;
+
+        padding: 0;
+
+        border: 0;
+
+        background: transparent;
+
+        cursor: zoom-out;
+      }
+
+      .lightbox-content {
+        position: relative;
+
+        z-index: 2;
+
+        max-width: 95vw;
+        max-height: 95vh;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+      }
+
+      .lightbox-image {
+        display: block;
+
+        max-width: 95vw;
+        max-height: 90vh;
+
+        width: auto;
+        height: auto;
+
+        object-fit: contain;
+      }
+
+      .lightbox-close {
+        position: absolute;
+
+        top: -30px;
+        right: 0;
+
+        padding: 0;
+
+        border: 0;
+
+        background: transparent;
+
+        color: #111111;
+
+        font-family: inherit;
+
+        font-size: 9px;
+
+        letter-spacing: 0.08em;
+
+        cursor: pointer;
+      }
+
+
+      /* =========================
          FOOTER
       ========================= */
 
       .site-footer {
-        width: calc(100% - 24px);
+        width:
+          calc(100% - 24px);
 
         max-width: 1440px;
 
@@ -557,11 +792,15 @@ const stars =
         }
 
         .article-cover {
-          max-width: 820px;
+          max-width: 680px;
         }
 
         .article-body {
           font-size: 14px;
+        }
+
+        .lightbox {
+          padding: 25px;
         }
 
       }
@@ -594,6 +833,8 @@ const stars =
         .article-cover {
           width: 100%;
 
+          max-width: none;
+
           margin-top: 50px;
 
           aspect-ratio: 4 / 3;
@@ -601,6 +842,8 @@ const stars =
 
         .article-body {
           width: 100%;
+
+          max-width: none;
 
           margin-top: 50px;
 
@@ -617,6 +860,19 @@ const stars =
         .site-footer {
           width:
             calc(100% - 40px);
+        }
+
+        .lightbox {
+          padding: 20px;
+        }
+
+        .lightbox-image {
+          max-width: 92vw;
+          max-height: 85vh;
+        }
+
+        .lightbox-close {
+          top: -25px;
         }
 
       }
