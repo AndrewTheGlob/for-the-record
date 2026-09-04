@@ -11,10 +11,32 @@ function slugifyTag(tag: string) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
+const base = import.meta.env.BASE_URL;
+
+function withBase(path: string) {
+  if (!path) return "";
+
+  // 外部圖片網址不處理
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://")
+  ) {
+    return path;
+  }
+
+  // 本地圖片自動加上 /for-the-record/
+  return `${base}${path.replace(/^\/+/, "")}`;
+}
+
 const entries = contentEntries
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .sort(
+    (a, b) =>
+      b.data.date.getTime() -
+      a.data.date.getTime()
+  )
   .map((entry) => ({
     id: entry.id,
+
     date: entry.data.date
       .toLocaleDateString("en-GB", {
         day: "2-digit",
@@ -22,24 +44,30 @@ const entries = contentEntries
         year: "numeric",
       })
       .toUpperCase(),
+
     title: entry.data.title,
+
     location: entry.data.location,
+
     description: entry.data.description,
+
     cover: entry.data.cover || "",
+
     tags: entry.data.tags || [],
   }));
-
-const base = import.meta.env.BASE_URL;
 ---
 
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0"
     />
+
     <title>for the record</title>
+
     <meta
       name="description"
       content="Personal records of places, music, films, food, and life."
@@ -48,14 +76,26 @@ const base = import.meta.env.BASE_URL;
 
   <body>
     <header class="site-header">
-      <a href={base} class="logo">for the record</a>
+      <a
+        href={base}
+        class="logo"
+      >
+        for the record
+      </a>
 
-      <button class="search-button" id="searchButton">
+      <button
+        class="search-button"
+        id="searchButton"
+        type="button"
+      >
         SEARCH
       </button>
     </header>
 
-    <div class="search-panel" id="searchPanel">
+    <div
+      class="search-panel"
+      id="searchPanel"
+    >
       <div class="search-inner">
         <input
           type="text"
@@ -64,31 +104,43 @@ const base = import.meta.env.BASE_URL;
           autocomplete="off"
         />
 
-        <button id="closeSearch">CLOSE</button>
+        <button
+          id="closeSearch"
+          type="button"
+        >
+          CLOSE
+        </button>
       </div>
     </div>
 
     <main class="site-main">
       <section class="recent-section">
-        <div class="section-label">RECENT</div>
+        <div class="section-label">
+          RECENT
+        </div>
 
-        <div class="entries" id="entries">
+        <div
+          class="entries"
+          id="entries"
+        >
           {
             entries.map((entry) => (
               <article
                 class="entry-card"
                 data-title={entry.title.toLowerCase()}
                 data-description={entry.description.toLowerCase()}
-                data-tags={entry.tags.join(" ").toLowerCase()}
+                data-tags={entry.tags
+                  .join(" ")
+                  .toLowerCase()}
               >
                 <a
-                  href={`${base}journal/${entry.id}`}
+                  href={`${base}journal/${entry.id}/`}
                   class="entry-link"
                 >
                   <div class="entry-image">
                     {entry.cover ? (
                       <img
-                        src={entry.cover}
+                        src={withBase(entry.cover)}
                         alt={entry.title}
                         loading="lazy"
                       />
@@ -110,20 +162,18 @@ const base = import.meta.env.BASE_URL;
                   </div>
                 </a>
 
-                {
-                  entry.tags.length > 0 && (
-                    <div class="entry-tags">
-                      {entry.tags.map((tag) => (
-                        <a
-                          href={`${base}tags/${slugifyTag(tag)}`}
-                          class="tag"
-                        >
-                          #{tag}
-                        </a>
-                      ))}
-                    </div>
-                  )
-                }
+                {entry.tags.length > 0 && (
+                  <div class="entry-tags">
+                    {entry.tags.map((tag) => (
+                      <a
+                        href={`${base}tags/${slugifyTag(tag)}/`}
+                        class="tag"
+                      >
+                        #{tag}
+                      </a>
+                    ))}
+                  </div>
+                )}
 
                 <p class="entry-description">
                   {entry.description}
@@ -133,7 +183,10 @@ const base = import.meta.env.BASE_URL;
           }
         </div>
 
-        <div class="no-results" id="noResults">
+        <div
+          class="no-results"
+          id="noResults"
+        >
           NO RESULTS
         </div>
       </section>
@@ -141,89 +194,138 @@ const base = import.meta.env.BASE_URL;
 
     <footer class="site-footer">
       <span>FOR THE RECORD</span>
+
       <span>© 2026</span>
     </footer>
 
     <script>
       const searchButton =
-        document.getElementById("searchButton");
+        document.getElementById(
+          "searchButton"
+        );
 
       const searchPanel =
-        document.getElementById("searchPanel");
+        document.getElementById(
+          "searchPanel"
+        );
 
       const searchInput =
-        document.getElementById("searchInput");
+        document.getElementById(
+          "searchInput"
+        );
 
       const closeSearch =
-        document.getElementById("closeSearch");
+        document.getElementById(
+          "closeSearch"
+        );
 
       const cards =
-        Array.from(document.querySelectorAll(".entry-card"));
+        Array.from(
+          document.querySelectorAll(
+            ".entry-card"
+          )
+        );
 
       const noResults =
-        document.getElementById("noResults");
+        document.getElementById(
+          "noResults"
+        );
 
-      searchButton?.addEventListener("click", () => {
-        searchPanel?.classList.add("open");
-        searchInput?.focus();
-      });
+      searchButton?.addEventListener(
+        "click",
+        () => {
+          searchPanel?.classList.add(
+            "open"
+          );
 
-      closeSearch?.addEventListener("click", () => {
-        searchPanel?.classList.remove("open");
-
-        if (searchInput) {
-          searchInput.value = "";
+          searchInput?.focus();
         }
+      );
 
-        cards.forEach((card) => {
-          card.style.display = "";
-        });
+      closeSearch?.addEventListener(
+        "click",
+        () => {
+          searchPanel?.classList.remove(
+            "open"
+          );
 
-        if (noResults) {
-          noResults.style.display = "none";
-        }
-      });
-
-      searchInput?.addEventListener("input", () => {
-        const query =
-          searchInput.value.trim().toLowerCase();
-
-        let visibleCount = 0;
-
-        cards.forEach((card) => {
-          const title =
-            card.getAttribute("data-title") || "";
-
-          const description =
-            card.getAttribute("data-description") || "";
-
-          const tags =
-            card.getAttribute("data-tags") || "";
-
-          const matches =
-            !query ||
-            title.includes(query) ||
-            description.includes(query) ||
-            tags.includes(query);
-
-          card.style.display = matches ? "" : "block";
-
-          if (matches) {
-            visibleCount++;
+          if (searchInput) {
+            searchInput.value = "";
           }
-        });
 
-        if (noResults) {
-          noResults.style.display =
-            visibleCount === 0 ? "block" : "none";
-        }
-      });
+          cards.forEach((card) => {
+            card.style.display = "";
+          });
 
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          searchPanel?.classList.remove("open");
+          if (noResults) {
+            noResults.style.display =
+              "none";
+          }
         }
-      });
+      );
+
+      searchInput?.addEventListener(
+        "input",
+        () => {
+          const query =
+            searchInput.value
+              .trim()
+              .toLowerCase();
+
+          let visibleCount = 0;
+
+          cards.forEach((card) => {
+            const title =
+              card.getAttribute(
+                "data-title"
+              ) || "";
+
+            const description =
+              card.getAttribute(
+                "data-description"
+              ) || "";
+
+            const tags =
+              card.getAttribute(
+                "data-tags"
+              ) || "";
+
+            const matches =
+              !query ||
+              title.includes(query) ||
+              description.includes(query) ||
+              tags.includes(query);
+
+            // 搜尋不到時真正隱藏卡片
+            card.style.display =
+              matches ? "" : "none";
+
+            if (matches) {
+              visibleCount++;
+            }
+          });
+
+          if (noResults) {
+            noResults.style.display =
+              visibleCount === 0
+                ? "block"
+                : "none";
+          }
+        }
+      );
+
+      document.addEventListener(
+        "keydown",
+        (event) => {
+          if (
+            event.key === "Escape"
+          ) {
+            searchPanel?.classList.remove(
+              "open"
+            );
+          }
+        }
+      );
     </script>
 
     <style>
@@ -240,19 +342,28 @@ const base = import.meta.env.BASE_URL;
       :global(body) {
         margin: 0;
         padding: 0;
+
         background: #ffffff;
         color: #111111;
+
         font-family:
           Arial,
           Helvetica,
           sans-serif;
+
         -webkit-font-smoothing: antialiased;
       }
+
+      /* =========================
+         HEADER
+      ========================= */
 
       .site-header {
         width: calc(100% - 80px);
         max-width: 1440px;
+
         margin: 0 auto;
+
         height: 56px;
 
         display: flex;
@@ -265,6 +376,7 @@ const base = import.meta.env.BASE_URL;
       .logo {
         color: #111111;
         text-decoration: none;
+
         font-size: 14px;
         letter-spacing: -0.02em;
       }
@@ -275,17 +387,23 @@ const base = import.meta.env.BASE_URL;
         padding: 0;
 
         color: #111111;
+
         font-size: 10px;
         letter-spacing: 0.08em;
 
         cursor: pointer;
       }
 
+      /* =========================
+         SEARCH
+      ========================= */
+
       .search-panel {
         display: none;
 
         width: calc(100% - 80px);
         max-width: 1440px;
+
         margin: 0 auto;
 
         border-bottom: 1px solid #e5e5e5;
@@ -301,6 +419,7 @@ const base = import.meta.env.BASE_URL;
         display: flex;
         align-items: center;
         justify-content: space-between;
+
         gap: 30px;
       }
 
@@ -310,11 +429,11 @@ const base = import.meta.env.BASE_URL;
         border: 0;
         outline: none;
 
-        font-size: 18px;
-        font-family: inherit;
-
         background: transparent;
         color: #111111;
+
+        font-family: inherit;
+        font-size: 18px;
       }
 
       .search-inner button {
@@ -327,9 +446,14 @@ const base = import.meta.env.BASE_URL;
         cursor: pointer;
       }
 
+      /* =========================
+         MAIN
+      ========================= */
+
       .site-main {
         width: calc(100% - 80px);
         max-width: 1440px;
+
         margin: 0 auto;
       }
 
@@ -340,13 +464,19 @@ const base = import.meta.env.BASE_URL;
       .section-label {
         margin-bottom: 34px;
 
+        color: #111111;
+
         font-size: 10px;
         letter-spacing: 0.08em;
-        color: #111111;
       }
+
+      /* =========================
+         ENTRIES GRID
+      ========================= */
 
       .entries {
         display: grid;
+
         grid-template-columns:
           repeat(4, minmax(0, 1fr));
 
@@ -360,13 +490,24 @@ const base = import.meta.env.BASE_URL;
 
       .entry-link {
         display: block;
+
         color: inherit;
         text-decoration: none;
       }
 
+      /* =========================
+         COVER IMAGE
+      ========================= */
+
       .entry-image {
         width: 100%;
-        aspect-ratio: 1 / 0.78;
+
+        /*
+          固定漂亮比例。
+          不管原始圖片是橫圖、直圖或超小圖片，
+          都會被放進這個區域。
+        */
+        aspect-ratio: 4 / 3;
 
         background: #f4f4f4;
 
@@ -380,29 +521,49 @@ const base = import.meta.env.BASE_URL;
       .entry-image img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+
         display: block;
+
+        /*
+          自動裁切成固定比例。
+          不會拉伸變形。
+        */
+        object-fit: cover;
+
+        /*
+          圖片中心對齊。
+        */
+        object-position: center;
       }
 
       .entry-image span {
+        color: #999999;
+
         font-size: 9px;
         letter-spacing: 0.08em;
-        color: #999999;
       }
+
+      /* =========================
+         TEXT
+      ========================= */
 
       .entry-date {
         margin-top: 16px;
 
+        color: #777777;
+
         font-size: 9px;
         letter-spacing: 0.04em;
-        color: #777777;
       }
 
       .entry-title {
         margin: 8px 0 0;
 
+        color: #111111;
+
         font-size: 17px;
         font-weight: 400;
+
         letter-spacing: -0.02em;
         line-height: 1.3;
       }
@@ -410,14 +571,16 @@ const base = import.meta.env.BASE_URL;
       .entry-location {
         margin-top: 9px;
 
+        color: #777777;
+
         font-size: 9px;
         letter-spacing: 0.04em;
-        color: #777777;
       }
 
       .entry-tags {
         display: flex;
         flex-wrap: wrap;
+
         gap: 8px;
 
         margin-top: 10px;
@@ -425,6 +588,7 @@ const base = import.meta.env.BASE_URL;
 
       .tag {
         color: #777777;
+
         text-decoration: none;
 
         font-size: 9px;
@@ -446,22 +610,34 @@ const base = import.meta.env.BASE_URL;
         line-height: 1.6;
       }
 
+      /* =========================
+         NO RESULTS
+      ========================= */
+
       .no-results {
         display: none;
 
         padding: 50px 0;
 
         color: #777777;
+
         font-size: 10px;
         letter-spacing: 0.08em;
       }
 
+      /* =========================
+         FOOTER
+      ========================= */
+
       .site-footer {
         width: calc(100% - 80px);
         max-width: 1440px;
+
         margin: 0 auto;
 
-        padding: 25px 0 28px;
+        padding:
+          25px 0
+          28px;
 
         border-top: 1px solid #e5e5e5;
 
@@ -474,12 +650,20 @@ const base = import.meta.env.BASE_URL;
         letter-spacing: 0.06em;
       }
 
+      /* =========================
+         TABLET
+      ========================= */
+
       @media (max-width: 1000px) {
         .entries {
           grid-template-columns:
             repeat(2, minmax(0, 1fr));
         }
       }
+
+      /* =========================
+         MOBILE
+      ========================= */
 
       @media (max-width: 600px) {
         .site-header,
@@ -495,6 +679,10 @@ const base = import.meta.env.BASE_URL;
 
         .recent-section {
           padding-top: 40px;
+        }
+
+        .entry-image {
+          aspect-ratio: 4 / 3;
         }
       }
     </style>
