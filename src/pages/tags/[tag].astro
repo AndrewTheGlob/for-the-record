@@ -54,6 +54,36 @@ function formatDate(date: Date) {
     })
     .toUpperCase();
 }
+
+function getCoverUrl(cover?: string) {
+  if (!cover) return "";
+
+  // 外部圖片網址不處理
+  if (
+    cover.startsWith("http://") ||
+    cover.startsWith("https://") ||
+    cover.startsWith("data:")
+  ) {
+    return cover;
+  }
+
+  // 已經包含 base 的路徑不重複加入
+  if (cover.startsWith(base)) {
+    return cover;
+  }
+
+  // /images/xxx.jpg
+  // →
+  // /for-the-record/images/xxx.jpg
+  if (cover.startsWith("/")) {
+    return `${base}${cover.slice(1)}`;
+  }
+
+  // images/xxx.jpg
+  // →
+  // /for-the-record/images/xxx.jpg
+  return `${base}${cover}`;
+}
 ---
 
 <html lang="en">
@@ -102,14 +132,14 @@ function formatDate(date: Date) {
           sortedEntries.map((entry) => (
             <article class="entry-card">
               <a
-                href={`${base}journal/${entry.id}`}
+                href={`${base}journal/${entry.id}/`}
                 class="entry-link"
               >
                 <div class="entry-image">
                   {
                     entry.data.cover ? (
                       <img
-                        src={entry.data.cover}
+                        src={getCoverUrl(entry.data.cover)}
                         alt={entry.data.title}
                       />
                     ) : (
@@ -140,7 +170,7 @@ function formatDate(date: Date) {
                           <a
                             href={`${base}tags/${encodeURIComponent(
                               entryTag.toLowerCase()
-                            )}`}
+                            )}/`}
                           >
                             #{entryTag}
                           </a>
@@ -237,7 +267,7 @@ function formatDate(date: Date) {
           20px 0
           10px;
 
-        font-size: 56px;
+        font-size: 42px;
         font-weight: 400;
 
         letter-spacing: -0.04em;
@@ -295,6 +325,8 @@ function formatDate(date: Date) {
         height: 100%;
 
         object-fit: cover;
+
+        display: block;
       }
 
       .entry-image span {
@@ -403,7 +435,7 @@ function formatDate(date: Date) {
         }
 
         h1 {
-          font-size: 44px;
+          font-size: 36px;
         }
       }
     </style>
