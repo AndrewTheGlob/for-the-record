@@ -1,44 +1,80 @@
 ---
-import { getCollection, render } from "astro:content";
+import { sanityClient, urlFor } from "../../lib/sanity";
+import { portableTextComponents } from "../../lib/portableText.js";
+import { toHTML } from "@portabletext/to-html";
 
 export async function getStaticPaths() {
-  const entries = await getCollection("entries");
+  const articles = await sanityClient.fetch(`
+    *[
+      _type == "article" &&
+      defined(slug.current)
+    ] {
+      "slug": slug.current
+    }
+  `);
 
-  return entries.map((entry) => ({
+  return articles.map((article) => ({
     params: {
-      slug: entry.id,
-    },
-    props: {
-      entry,
-    },
+      slug: article.slug
+    }
   }));
 }
 
-const { entry } = Astro.props;
+const slug = Astro.params.slug;
 
-const { Content } = await render(entry);
+const article = await sanityClient.fetch(
+  `
+    *[
+      _type == "article" &&
+      slug.current == $slug
+    ][0] {
+      title,
+      date,
+      location,
+      description,
+      cover,
+      rating,
+      body,
+      "tags": tags[]->name
+    }
+  `,
+  {
+    slug
+  }
+);
 
-const {
-  title,
-  date,
-  location,
-  description,
-  cover,
-  tags,
-  rating,
-} = entry.data;
+const base = import.meta.env.BASE_URL;
 
-const formattedDate = date
+const title = article.title;
+const date = article.date;
+const location = article.location || "";
+const description = article.description || "";
+const tags = article.tags || [];
+const cover = article.cover;
+const body = article.body || [];
+
+const rating = Math.max(
+  0,
+  Math.min(
+    6,
+    Math.round(
+      Number(article.rating || 0)
+    )
+  )
+);
+
+const formattedDate = new Date(
+  date + "T00:00:00Z"
+)
   .toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "UTC"
   })
   .toUpperCase();
 
-const base = import.meta.env.BASE_URL;
-
-function slugifyTag(tag: string) {
+function slugifyTag(tag) {
   return tag
     .trim()
     .toLowerCase()
@@ -46,18 +82,19 @@ function slugifyTag(tag: string) {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-function withBase(path: string) {
-  if (!path) return "";
+const coverUrl = cover
+  ? urlFor(cover)
+      .width(1400)
+      .url()
+  : "";
 
-  if (
-    path.startsWith("http://") ||
-    path.startsWith("https://")
-  ) {
-    return path;
-  }
+const coverFullUrl = cover
+  ? urlFor(cover).url()
+  : "";
 
-  return `${base}${path.replace(/^\/+/, "")}`;
-}
+const bodyHtml = toHTML(body, {
+  components: portableTextComponents
+});
 
 const stars =
   "★".repeat(rating) +
@@ -82,11 +119,6 @@ const stars =
   </head>
 
   <body>
-
-    <!-- =========================
-         HEADER
-    ========================= -->
-
     <header class="site-header">
       <a
         href={base}
@@ -103,21 +135,9 @@ const stars =
       </a>
     </header>
 
-
-    <!-- =========================
-         MAIN
-    ========================= -->
-
     <main>
-
       <div class="article-container">
-
-        <!-- =======================
-             ARTICLE HEADER
-        ======================= -->
-
         <section class="article-header">
-
           <div class="article-meta">
             <span>
               {formattedDate}
@@ -145,7 +165,7 @@ const stars =
           }
 
           {
-            tags && tags.length > 0 && (
+            tags.length > 0 && (
               <div class="article-tags">
                 {
                   tags.map((tag) => (
@@ -166,16 +186,10 @@ const stars =
           >
             {stars}
           </div>
-
         </section>
 
-
-        <!-- =======================
-             COVER IMAGE
-        ======================= -->
-
         {
-          cover && (
+          coverUrl && (
             <button
               class="article-cover"
               id="coverButton"
@@ -183,33 +197,22 @@ const stars =
               aria-label="Open full-size image"
             >
               <img
-                src={withBase(cover)}
+                src={coverUrl}
                 alt={title}
               />
             </button>
           )
         }
 
-
-        <!-- =======================
-             ARTICLE BODY
-        ======================= -->
-
-        <article class="article-body">
-          <Content />
-        </article>
-
+        <article
+          class="article-body"
+          set:html={bodyHtml}
+        />
       </div>
-
     </main>
 
-
-    <!-- =========================
-         IMAGE LIGHTBOX
-    ========================= -->
-
     {
-      cover && (
+      coverFullUrl && (
         <div
           class="lightbox"
           id="coverLightbox"
@@ -224,7 +227,6 @@ const stars =
           </button>
 
           <div class="lightbox-content">
-
             <button
               class="lightbox-close"
               id="lightboxClose"
@@ -234,20 +236,14 @@ const stars =
             </button>
 
             <img
-              src={withBase(cover)}
+              src={coverFullUrl}
               alt={title}
               class="lightbox-image"
             />
-
           </div>
         </div>
       )
     }
-
-
-    <!-- =========================
-         FOOTER
-    ========================= -->
 
     <footer class="site-footer">
       <span>
@@ -259,16 +255,21 @@ const stars =
       </span>
     </footer>
 
-
     <script>
       const coverButton =
-        document.getElementById("coverButton");
+        document.getElementById(
+          "coverButton"
+        );
 
       const lightbox =
-        document.getElementById("coverLightbox");
+        document.getElementById(
+          "coverLightbox"
+        );
 
       const lightboxClose =
-        document.getElementById("lightboxClose");
+        document.getElementById(
+          "lightboxClose"
+        );
 
       const lightboxBackdrop =
         document.getElementById(
@@ -278,7 +279,10 @@ const stars =
       function openLightbox() {
         if (!lightbox) return;
 
-        lightbox.classList.add("open");
+        lightbox.classList.add(
+          "open"
+        );
+
         lightbox.setAttribute(
           "aria-hidden",
           "false"
@@ -292,7 +296,10 @@ const stars =
       function closeLightbox() {
         if (!lightbox) return;
 
-        lightbox.classList.remove("open");
+        lightbox.classList.remove(
+          "open"
+        );
+
         lightbox.setAttribute(
           "aria-hidden",
           "true"
@@ -328,13 +335,7 @@ const stars =
       );
     </script>
 
-
     <style>
-
-      /* =========================
-         GLOBAL
-      ========================= */
-
       :global(*) {
         box-sizing: border-box;
       }
@@ -358,76 +359,63 @@ const stars =
           Helvetica,
           sans-serif;
 
-        -webkit-font-smoothing: antialiased;
+        -webkit-font-smoothing:
+          antialiased;
       }
 
       :global(body.lightbox-open) {
         overflow: hidden;
       }
 
-
-      /* =========================
-         HEADER
-      ========================= */
-
       .site-header {
         position: sticky;
+
         top: 0;
         z-index: 100;
 
-        width: calc(100% - 24px);
-        max-width: 1440px;
+        width:
+          calc(100% - 24px);
 
+        max-width: 1440px;
         height: 45px;
 
         margin: 0 auto;
 
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content:
+          space-between;
 
-        border-bottom: 1px solid #e5e5e5;
+        border-bottom:
+          1px solid #e5e5e5;
 
         background: #ffffff;
       }
 
       .logo {
         color: #111111;
-
         text-decoration: none;
 
         font-size: 14px;
-
         letter-spacing: -0.02em;
       }
 
       .back {
         color: #111111;
-
         text-decoration: none;
 
         font-size: 9px;
-
         letter-spacing: 0.08em;
       }
 
-
-      /* =========================
-         ARTICLE CONTAINER
-      ========================= */
-
       .article-container {
-        width: calc(100% - 24px);
+        width:
+          calc(100% - 24px);
 
         max-width: 1440px;
 
         margin: 0 auto;
       }
-
-
-      /* =========================
-         ARTICLE HEADER
-      ========================= */
 
       .article-header {
         padding-top: 72px;
@@ -435,13 +423,11 @@ const stars =
 
       .article-meta {
         display: flex;
-
         gap: 30px;
 
         color: #777777;
 
         font-size: 9px;
-
         letter-spacing: 0.05em;
       }
 
@@ -466,8 +452,7 @@ const stars =
         letter-spacing:
           -0.055em;
 
-        line-height:
-          0.95;
+        line-height: 0.95;
       }
 
       .description {
@@ -480,18 +465,11 @@ const stars =
         color: #333333;
 
         font-size: 14px;
-
         line-height: 1.6;
       }
 
-
-      /* =========================
-         TAGS
-      ========================= */
-
       .article-tags {
         display: flex;
-
         flex-wrap: wrap;
 
         gap: 10px;
@@ -501,11 +479,9 @@ const stars =
 
       .article-tags a {
         color: #666666;
-
         text-decoration: none;
 
         font-size: 9px;
-
         letter-spacing: 0.03em;
       }
 
@@ -513,31 +489,19 @@ const stars =
         color: #111111;
       }
 
-
-      /* =========================
-         RATING
-      ========================= */
-
       .rating {
         margin-top: 22px;
 
         color: #111111;
 
         font-size: 16px;
-
         letter-spacing: 0.12em;
 
         line-height: 1;
       }
 
-
-      /* =========================
-         ARTICLE COVER
-      ========================= */
-
       .article-cover {
         width: 100%;
-
         max-width: 680px;
 
         margin:
@@ -545,7 +509,6 @@ const stars =
           0;
 
         padding: 0;
-
         border: 0;
 
         appearance: none;
@@ -568,18 +531,11 @@ const stars =
         display: block;
 
         object-fit: cover;
-
         object-position: center;
       }
 
-
-      /* =========================
-         ARTICLE BODY
-      ========================= */
-
       .article-body {
         width: 100%;
-
         max-width: 680px;
 
         margin-top: 65px;
@@ -587,7 +543,6 @@ const stars =
         color: #111111;
 
         font-size: 15px;
-
         line-height: 2;
 
         text-align: left;
@@ -601,10 +556,10 @@ const stars =
 
       .article-body :global(h2) {
         margin:
-          55px 0 25px;
+          55px 0
+          25px;
 
         font-size: 24px;
-
         font-weight: 400;
 
         letter-spacing: -0.02em;
@@ -614,41 +569,47 @@ const stars =
 
       .article-body :global(h3) {
         margin:
-          45px 0 20px;
+          45px 0
+          20px;
 
         font-size: 18px;
-
         font-weight: 400;
       }
 
-
-      /* =========================
-         ARTICLE BODY IMAGES
-      ========================= */
-
-      .article-body :global(img) {
+      .article-body :global(.body-image) {
         width: 100%;
 
+        margin:
+          50px 0;
+      }
+
+      .article-body
+        :global(.body-image img) {
+        width: 100%;
         max-width: 100%;
 
         height: auto;
 
         display: block;
 
-        margin:
-          50px 0;
+        margin: 0;
 
         background: #f4f4f4;
+      }
+
+      .article-body
+        :global(.body-image figcaption) {
+        margin-top: 10px;
+
+        color: #777777;
+
+        font-size: 10px;
+        line-height: 1.6;
       }
 
       .article-body :global(a) {
         color: inherit;
       }
-
-
-      /* =========================
-         LIGHTBOX
-      ========================= */
 
       .lightbox {
         position: fixed;
@@ -658,18 +619,18 @@ const stars =
         z-index: 1000;
 
         display: none;
-
         align-items: center;
         justify-content: center;
 
         padding: 40px;
 
-        background: rgba(
-          255,
-          255,
-          255,
-          0.96
-        );
+        background:
+          rgba(
+            255,
+            255,
+            255,
+            0.96
+          );
       }
 
       .lightbox.open {
@@ -685,7 +646,6 @@ const stars =
         height: 100%;
 
         padding: 0;
-
         border: 0;
 
         background: transparent;
@@ -702,7 +662,6 @@ const stars =
         max-height: 95vh;
 
         display: flex;
-
         align-items: center;
         justify-content: center;
       }
@@ -726,7 +685,6 @@ const stars =
         right: 0;
 
         padding: 0;
-
         border: 0;
 
         background: transparent;
@@ -736,16 +694,10 @@ const stars =
         font-family: inherit;
 
         font-size: 9px;
-
         letter-spacing: 0.08em;
 
         cursor: pointer;
       }
-
-
-      /* =========================
-         FOOTER
-      ========================= */
 
       .site-footer {
         width:
@@ -772,17 +724,10 @@ const stars =
         color: #777777;
 
         font-size: 9px;
-
         letter-spacing: 0.06em;
       }
 
-
-      /* =========================
-         TABLET
-      ========================= */
-
       @media (max-width: 800px) {
-
         .article-header {
           padding-top: 55px;
         }
@@ -802,16 +747,9 @@ const stars =
         .lightbox {
           padding: 25px;
         }
-
       }
 
-
-      /* =========================
-         MOBILE
-      ========================= */
-
       @media (max-width: 600px) {
-
         .site-header {
           width:
             calc(100% - 40px);
@@ -832,7 +770,6 @@ const stars =
 
         .article-cover {
           width: 100%;
-
           max-width: none;
 
           margin-top: 50px;
@@ -842,7 +779,6 @@ const stars =
 
         .article-body {
           width: 100%;
-
           max-width: none;
 
           margin-top: 50px;
@@ -850,9 +786,8 @@ const stars =
           font-size: 14px;
         }
 
-        .article-body :global(img) {
-          width: 100%;
-
+        .article-body
+          :global(.body-image) {
           margin:
             35px 0;
         }
@@ -874,9 +809,7 @@ const stars =
         .lightbox-close {
           top: -25px;
         }
-
       }
-
     </style>
   </body>
 </html>

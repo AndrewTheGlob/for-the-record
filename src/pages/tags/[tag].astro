@@ -1,89 +1,106 @@
 ---
-import { getCollection } from "astro:content";
+import { sanityClient, urlFor } from "../../lib/sanity";
 
 export async function getStaticPaths() {
-  const entries = await getCollection("entries");
-
-  const tagMap = new Map();
-
-  for (const entry of entries) {
-    for (const tag of entry.data.tags || []) {
-      const key = tag.toLowerCase();
-
-      if (!tagMap.has(key)) {
-        tagMap.set(key, tag);
-      }
+  const tags = await sanityClient.fetch(`
+    *[
+      _type == "tag" &&
+      defined(name)
+    ] {
+      name
     }
+  `);
+
+  function makeTagSlug(value) {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
   }
 
-  return Array.from(tagMap.entries()).map(
-    ([slug, originalTag]) => ({
-      params: {
-        tag: slug,
-      },
+  return tags.map((tag) => ({
+    params: {
+      tag: makeTagSlug(tag.name)
+    },
 
-      props: {
-        tag: originalTag,
-        entries: entries.filter((entry) =>
-          (entry.data.tags || []).some(
-            (entryTag) =>
-              entryTag.toLowerCase() === slug
-          )
-        ),
-      },
-    })
-  );
+    props: {
+      tagName: tag.name
+    }
+  }));
 }
 
-const { tag, entries } = Astro.props;
+const tagName = Astro.props.tagName;
+
+const articles = await sanityClient.fetch(
+  `
+    *[
+      _type == "article" &&
+      defined(slug.current) &&
+      $tagName in tags[]->name
+    ]
+    | order(date desc) {
+      title,
+      "slug": slug.current,
+      date,
+      location,
+      description,
+      cover,
+      "tags": tags[]->name
+    }
+  `,
+  {
+    tagName
+  }
+);
 
 const base = import.meta.env.BASE_URL;
 
-const sortedEntries = entries.sort(
-  (a, b) =>
-    b.data.date.getTime() -
-    a.data.date.getTime()
-);
+function slugifyTag(tag) {
+  return tag
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
 
-function formatDate(date: Date) {
-  return date
+function formatDate(date) {
+  return new Date(
+    date + "T00:00:00Z"
+  )
     .toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
+      timeZone: "UTC"
     })
     .toUpperCase();
 }
 
-function getCoverUrl(cover?: string) {
-  if (!cover) return "";
+const entries = articles.map((article) => ({
+  slug: article.slug,
 
-  // 外部圖片網址不處理
-  if (
-    cover.startsWith("http://") ||
-    cover.startsWith("https://") ||
-    cover.startsWith("data:")
-  ) {
-    return cover;
-  }
+  title: article.title,
 
-  // 已經包含 base 的路徑不重複加入
-  if (cover.startsWith(base)) {
-    return cover;
-  }
+  date: formatDate(
+    article.date
+  ),
 
-  // /images/xxx.jpg
-  // →
-  // /for-the-record/images/xxx.jpg
-  if (cover.startsWith("/")) {
-    return `${base}${cover.slice(1)}`;
-  }
+  location:
+    article.location || "",
 
-  // images/xxx.jpg
-  // →
-  // /for-the-record/images/xxx.jpg
-  return `${base}${cover}`;
-}
+  description:
+    article.description || "",
+
+  tags:
+    article.tags || [],
+
+  cover: article.cover
+    ? urlFor(article.cover)
+        .width(1000)
+        .url()
+    : ""
+}));
 ---
 
 <html lang="en">
@@ -96,102 +113,138 @@ function getCoverUrl(cover?: string) {
     />
 
     <title>
-      #{tag} — for the record
+      #{tagName} — for the record
     </title>
+
+    <meta
+      name="description"
+      content={`Articles tagged ${tagName}`}
+    />
   </head>
 
   <body>
     <header class="site-header">
-      <a href={base} class="logo">
+      <a
+        href={base}
+        class="logo"
+      >
         for the record
       </a>
 
-      <a href={base} class="back">
+      <a
+        href={base}
+        class="back"
+      >
         BACK
       </a>
     </header>
 
-    <main>
-      <section class="tag-header">
-        <div class="small-label">
-          TAG
+    <main class="site-main">
+      <section class="tag-section">
+        <div class="tag-header">
+          <h1>
+            #{tagName.toUpperCase()}
+          </h1>
+
+          <div class="article-count">
+            {
+              entries.length === 1
+                ? "1 ARTICLE"
+                : `${entries.length} ARTICLES`
+            }
+          </div>
         </div>
 
-        <h1>#{tag}</h1>
-
-        <div class="count">
-          {sortedEntries.length}
-          {sortedEntries.length === 1
-            ? " ENTRY"
-            : " ENTRIES"}
-        </div>
-      </section>
-
-      <section class="entries">
         {
-          sortedEntries.map((entry) => (
-            <article class="entry-card">
-              <a
-                href={`${base}journal/${entry.id}/`}
-                class="entry-link"
-              >
-                <div class="entry-image">
-                  {
-                    entry.data.cover ? (
-                      <img
-                        src={getCoverUrl(entry.data.cover)}
-                        alt={entry.data.title}
-                      />
-                    ) : (
-                      <span>PHOTO</span>
-                    )
-                  }
-                </div>
-
-                <div class="entry-date">
-                  {formatDate(entry.data.date)}
-                </div>
-
-                <h2>
-                  {entry.data.title}
-                </h2>
-
-                <div class="location">
-                  {entry.data.location}
-                </div>
-              </a>
-
+          entries.length > 0 ? (
+            <div class="entries">
               {
-                entry.data.tags &&
-                  entry.data.tags.length > 0 && (
-                    <div class="entry-tags">
-                      {entry.data.tags.map(
-                        (entryTag) => (
-                          <a
-                            href={`${base}tags/${encodeURIComponent(
-                              entryTag.toLowerCase()
-                            )}/`}
-                          >
-                            #{entryTag}
-                          </a>
-                        )
-                      )}
-                    </div>
-                  )
-              }
+                entries.map((entry) => (
+                  <article class="entry-card">
+                    <a
+                      href={`${base}journal/${entry.slug}/`}
+                      class="entry-link"
+                    >
+                      <div class="entry-image">
+                        {
+                          entry.cover ? (
+                            <img
+                              src={entry.cover}
+                              alt={entry.title}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <span>
+                              PHOTO
+                            </span>
+                          )
+                        }
+                      </div>
 
-              <p>
-                {entry.data.description}
-              </p>
-            </article>
-          ))
+                      <div class="entry-date">
+                        {entry.date}
+                      </div>
+
+                      <h2 class="entry-title">
+                        {entry.title}
+                      </h2>
+
+                      {
+                        entry.location && (
+                          <div class="entry-location">
+                            {entry.location}
+                          </div>
+                        )
+                      }
+                    </a>
+
+                    {
+                      entry.tags.length > 0 && (
+                        <div class="entry-tags">
+                          {
+                            entry.tags.map(
+                              (entryTag) => (
+                                <a
+                                  href={`${base}tags/${slugifyTag(entryTag)}/`}
+                                  class="tag"
+                                >
+                                  #{entryTag}
+                                </a>
+                              )
+                            )
+                          }
+                        </div>
+                      )
+                    }
+
+                    {
+                      entry.description && (
+                        <p class="entry-description">
+                          {entry.description}
+                        </p>
+                      )
+                    }
+                  </article>
+                ))
+              }
+            </div>
+          ) : (
+            <div class="empty">
+              NO ARTICLES
+            </div>
+          )
         }
       </section>
     </main>
 
     <footer class="site-footer">
-      <span>FOR THE RECORD</span>
-      <span>© 2026</span>
+      <span>
+        FOR THE RECORD
+      </span>
+
+      <span>
+        © 2026
+      </span>
     </footer>
 
     <style>
@@ -199,8 +252,17 @@ function getCoverUrl(cover?: string) {
         box-sizing: border-box;
       }
 
+      :global(html) {
+        margin: 0;
+        padding: 0;
+
+        background: #ffffff;
+      }
+
       :global(body) {
         margin: 0;
+        padding: 0;
+
         background: #ffffff;
         color: #111111;
 
@@ -209,22 +271,26 @@ function getCoverUrl(cover?: string) {
           Helvetica,
           sans-serif;
 
-        -webkit-font-smoothing: antialiased;
+        -webkit-font-smoothing:
+          antialiased;
       }
 
       .site-header {
-        width: calc(100% - 80px);
-        max-width: 1440px;
+        width:
+          calc(100% - 80px);
 
+        max-width: 1440px;
         height: 56px;
 
         margin: 0 auto;
 
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content:
+          space-between;
 
-        border-bottom: 1px solid #e5e5e5;
+        border-bottom:
+          1px solid #e5e5e5;
       }
 
       .logo {
@@ -232,6 +298,8 @@ function getCoverUrl(cover?: string) {
         text-decoration: none;
 
         font-size: 14px;
+        letter-spacing:
+          -0.02em;
       }
 
       .back {
@@ -239,63 +307,65 @@ function getCoverUrl(cover?: string) {
         text-decoration: none;
 
         font-size: 9px;
-        letter-spacing: 0.08em;
+        letter-spacing:
+          0.08em;
       }
 
-      .tag-header {
-        width: calc(100% - 80px);
+      .site-main {
+        width:
+          calc(100% - 80px);
+
         max-width: 1440px;
 
         margin: 0 auto;
-
-        padding:
-          75px 0
-          50px;
-
-        border-bottom: 1px solid #e5e5e5;
       }
 
-      .small-label {
-        color: #777777;
+      .tag-section {
+        padding:
+          60px 0
+          110px;
+      }
 
-        font-size: 9px;
-        letter-spacing: 0.08em;
+      .tag-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content:
+          space-between;
+
+        margin-bottom: 50px;
       }
 
       h1 {
-        margin:
-          20px 0
-          10px;
+        margin: 0;
 
         font-size: 42px;
         font-weight: 400;
 
-        letter-spacing: -0.04em;
+        letter-spacing:
+          -0.04em;
+
+        line-height: 1;
       }
 
-      .count {
+      .article-count {
         color: #777777;
 
         font-size: 9px;
-        letter-spacing: 0.06em;
+        letter-spacing:
+          0.06em;
       }
 
       .entries {
-        width: calc(100% - 80px);
-        max-width: 1440px;
-
-        margin: 0 auto;
-
-        padding:
-          55px 0
-          110px;
-
         display: grid;
 
         grid-template-columns:
-          repeat(4, minmax(0, 1fr));
+          repeat(
+            4,
+            minmax(0, 1fr)
+          );
 
-        gap: 65px 24px;
+        column-gap: 24px;
+        row-gap: 70px;
       }
 
       .entry-card {
@@ -303,37 +373,42 @@ function getCoverUrl(cover?: string) {
       }
 
       .entry-link {
+        display: block;
+
         color: inherit;
         text-decoration: none;
       }
 
       .entry-image {
         width: 100%;
-        aspect-ratio: 1 / 0.78;
 
-        background: #f4f4f4;
+        aspect-ratio:
+          1 / 0.78;
 
         display: flex;
         align-items: center;
         justify-content: center;
 
         overflow: hidden;
+
+        background: #f4f4f4;
       }
 
       .entry-image img {
         width: 100%;
         height: 100%;
 
-        object-fit: cover;
-
         display: block;
+
+        object-fit: cover;
       }
 
       .entry-image span {
         color: #999999;
 
         font-size: 9px;
-        letter-spacing: 0.08em;
+        letter-spacing:
+          0.08em;
       }
 
       .entry-date {
@@ -342,24 +417,32 @@ function getCoverUrl(cover?: string) {
         color: #777777;
 
         font-size: 9px;
+        letter-spacing:
+          0.04em;
       }
 
-      h2 {
+      .entry-title {
         margin:
-          8px 0 0;
+          8px 0
+          0;
 
         font-size: 17px;
         font-weight: 400;
 
-        letter-spacing: -0.02em;
+        letter-spacing:
+          -0.02em;
+
+        line-height: 1.3;
       }
 
-      .location {
+      .entry-location {
         margin-top: 9px;
 
         color: #777777;
 
         font-size: 9px;
+        letter-spacing:
+          0.04em;
       }
 
       .entry-tags {
@@ -371,22 +454,25 @@ function getCoverUrl(cover?: string) {
         margin-top: 10px;
       }
 
-      .entry-tags a {
+      .tag {
         color: #777777;
         text-decoration: none;
 
         font-size: 9px;
+        letter-spacing:
+          0.03em;
       }
 
-      .entry-tags a:hover {
+      .tag:hover {
         color: #111111;
       }
 
-      p {
+      .entry-description {
         max-width: 340px;
 
         margin:
-          13px 0 0;
+          13px 0
+          0;
 
         color: #444444;
 
@@ -394,8 +480,21 @@ function getCoverUrl(cover?: string) {
         line-height: 1.6;
       }
 
+      .empty {
+        padding:
+          70px 0;
+
+        color: #777777;
+
+        font-size: 10px;
+        letter-spacing:
+          0.08em;
+      }
+
       .site-footer {
-        width: calc(100% - 80px);
+        width:
+          calc(100% - 80px);
+
         max-width: 1440px;
 
         margin: 0 auto;
@@ -404,38 +503,65 @@ function getCoverUrl(cover?: string) {
           25px 0
           28px;
 
-        border-top: 1px solid #e5e5e5;
+        border-top:
+          1px solid #e5e5e5;
 
         display: flex;
-        justify-content: space-between;
+        justify-content:
+          space-between;
 
         color: #777777;
 
         font-size: 9px;
-        letter-spacing: 0.06em;
+        letter-spacing:
+          0.06em;
       }
 
-      @media (max-width: 1000px) {
+      @media (
+        max-width: 1000px
+      ) {
         .entries {
           grid-template-columns:
-            repeat(2, minmax(0, 1fr));
+            repeat(
+              2,
+              minmax(0, 1fr)
+            );
         }
       }
 
-      @media (max-width: 600px) {
+      @media (
+        max-width: 600px
+      ) {
         .site-header,
-        .tag-header,
-        .entries,
+        .site-main,
         .site-footer {
-          width: calc(100% - 40px);
+          width:
+            calc(100% - 40px);
         }
 
-        .entries {
-          grid-template-columns: 1fr;
+        .tag-section {
+          padding-top: 40px;
+        }
+
+        .tag-header {
+          align-items:
+            flex-start;
+
+          flex-direction:
+            column;
+
+          gap: 15px;
+
+          margin-bottom: 35px;
         }
 
         h1 {
           font-size: 36px;
+        }
+
+        .entries {
+          grid-template-columns:
+            1fr;
         }
       }
     </style>
