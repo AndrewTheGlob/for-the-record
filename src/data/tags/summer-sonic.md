@@ -1,3 +1,0 @@
----
-name: SUMMER SONIC
----
