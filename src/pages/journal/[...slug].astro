@@ -195,6 +195,7 @@ const stars =
               id="coverButton"
               type="button"
               aria-label="Open full-size image"
+              data-full={coverFullUrl}
             >
               <img
                 src={coverUrl}
@@ -211,39 +212,36 @@ const stars =
       </div>
     </main>
 
-    {
-      coverFullUrl && (
-        <div
-          class="lightbox"
-          id="coverLightbox"
-          aria-hidden="true"
+    <div
+      class="lightbox"
+      id="imageLightbox"
+      aria-hidden="true"
+    >
+      <button
+        class="lightbox-backdrop"
+        id="lightboxBackdrop"
+        type="button"
+        aria-label="Close image"
+      >
+      </button>
+
+      <div class="lightbox-content">
+        <button
+          class="lightbox-close"
+          id="lightboxClose"
+          type="button"
         >
-          <button
-            class="lightbox-backdrop"
-            id="lightboxBackdrop"
-            type="button"
-            aria-label="Close image"
-          >
-          </button>
+          CLOSE
+        </button>
 
-          <div class="lightbox-content">
-            <button
-              class="lightbox-close"
-              id="lightboxClose"
-              type="button"
-            >
-              CLOSE
-            </button>
-
-            <img
-              src={coverFullUrl}
-              alt={title}
-              class="lightbox-image"
-            />
-          </div>
-        </div>
-      )
-    }
+        <img
+          src=""
+          alt=""
+          class="lightbox-image"
+          id="lightboxImage"
+        />
+      </div>
+    </div>
 
     <footer class="site-footer">
       <span>
@@ -263,7 +261,12 @@ const stars =
 
       const lightbox =
         document.getElementById(
-          "coverLightbox"
+          "imageLightbox"
+        );
+
+      const lightboxImage =
+        document.getElementById(
+          "lightboxImage"
         );
 
       const lightboxClose =
@@ -276,8 +279,32 @@ const stars =
           "lightboxBackdrop"
         );
 
-      function openLightbox() {
-        if (!lightbox) return;
+      const bodyImages =
+        document.querySelectorAll(
+          ".article-body .body-image img"
+        );
+
+      function openLightbox(
+        src,
+        alt = ""
+      ) {
+        if (
+          !lightbox ||
+          !lightboxImage ||
+          !src
+        ) {
+          return;
+        }
+
+        lightboxImage.setAttribute(
+          "src",
+          src
+        );
+
+        lightboxImage.setAttribute(
+          "alt",
+          alt
+        );
 
         lightbox.classList.add(
           "open"
@@ -312,7 +339,51 @@ const stars =
 
       coverButton?.addEventListener(
         "click",
-        openLightbox
+        () => {
+          const fullImage =
+            coverButton.getAttribute(
+              "data-full"
+            );
+
+          const coverImage =
+            coverButton.querySelector(
+              "img"
+            );
+
+          const alt =
+            coverImage?.getAttribute(
+              "alt"
+            ) || "";
+
+          openLightbox(
+            fullImage,
+            alt
+          );
+        }
+      );
+
+      bodyImages.forEach(
+        (image) => {
+          image.addEventListener(
+            "click",
+            () => {
+              const src =
+                image.getAttribute(
+                  "src"
+                );
+
+              const alt =
+                image.getAttribute(
+                  "alt"
+                ) || "";
+
+              openLightbox(
+                src,
+                alt
+              );
+            }
+          );
+        }
       );
 
       lightboxClose?.addEventListener(
@@ -328,7 +399,9 @@ const stars =
       document.addEventListener(
         "keydown",
         (event) => {
-          if (event.key === "Escape") {
+          if (
+            event.key === "Escape"
+          ) {
             closeLightbox();
           }
         }
@@ -562,7 +635,8 @@ const stars =
         font-size: 24px;
         font-weight: 400;
 
-        letter-spacing: -0.02em;
+        letter-spacing:
+          -0.02em;
 
         line-height: 1.3;
       }
@@ -576,8 +650,15 @@ const stars =
         font-weight: 400;
       }
 
-      .article-body :global(.body-image) {
+      /* =========================
+         ARTICLE BODY IMAGE
+         Same visual size as cover
+      ========================= */
+
+      .article-body
+        :global(.body-image) {
         width: 100%;
+        max-width: 680px;
 
         margin:
           50px 0;
@@ -586,15 +667,17 @@ const stars =
       .article-body
         :global(.body-image img) {
         width: 100%;
-        max-width: 100%;
 
-        height: auto;
+        aspect-ratio: 16 / 9;
 
         display: block;
 
-        margin: 0;
+        object-fit: cover;
+        object-position: center;
 
         background: #f4f4f4;
+
+        cursor: zoom-in;
       }
 
       .article-body
@@ -610,6 +693,10 @@ const stars =
       .article-body :global(a) {
         color: inherit;
       }
+
+      /* =========================
+         LIGHTBOX
+      ========================= */
 
       .lightbox {
         position: fixed;
@@ -736,10 +823,6 @@ const stars =
           font-size: 50px;
         }
 
-        .article-cover {
-          max-width: 680px;
-        }
-
         .article-body {
           font-size: 14px;
         }
@@ -788,8 +871,16 @@ const stars =
 
         .article-body
           :global(.body-image) {
+          width: 100%;
+          max-width: none;
+
           margin:
             35px 0;
+        }
+
+        .article-body
+          :global(.body-image img) {
+          aspect-ratio: 4 / 3;
         }
 
         .site-footer {
